@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LogicLab — Boolean & Circuit Simulator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #0d0d0f;
+    --surface: #141417;
+    --surface2: #1c1c21;
+    --border: #2a2a32;
+    --accent: #00ff9d;
+    --accent2: #7c3aed;
+    --danger: #ff4d6d;
+    --warn: #ffa500;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    padding: 20px 24px 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .logo {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+    margin-bottom: 16px;
+  }
+
+  .logo span { color: var(--muted); font-weight: 400; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar { display: none; }
+
+  .tab {
+    padding: 12px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.15s;
+    letter-spacing: 0.3px;
+  }
+
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* PANELS */
+  .panel { display: none; padding: 24px; }
+  .panel.active { display: block; }
+
+  /* SECTION TITLES */
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  /* INPUT ROW */
+  .input-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  input[type="text"], select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 11px 14px;
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 14px;
+    flex: 1;
+    min-width: 200px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  input[type="text"]:focus, select:focus { border-color: var(--accent); }
+
+  select option { background: var(--surface2); }
+
+  .btn {
+    padding: 11px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all 0.15s;
+    font-family: var(--sans);
+  }
+
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #00e68a; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: var(--danger); color: #fff; }
+
+  /* SYNTAX HINT */
+  .hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 20px;
+    font-family: var(--mono);
+    background: var(--surface2);
+    padding: 10px 14px;
+    border-radius: 8px;
+    border-left: 3px solid var(--accent2);
+    line-height: 1.8;
+  }
+
+  .hint b { color: var(--accent); }
+
+  /* TRUTH TABLE */
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 14px;
+  }
+
+  th {
+    background: var(--surface2);
+    padding: 10px 16px;
+    text-align: center;
+    color: var(--accent);
+    font-weight: 700;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  td {
+    padding: 9px 16px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+  td.one { color: var(--accent); font-weight: 700; }
+  td.zero { color: var(--muted); }
+
+  /* ERROR */
+  .error {
+    color: var(--danger);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 12px 16px;
+    background: rgba(255,77,109,0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(255,77,109,0.3);
+    margin-top: 12px;
+  }
+
+  /* RESULT BOX */
+  .result-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+
+  .result-box .label { color: var(--muted); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+  .result-box .value { color: var(--accent); font-size: 15px; font-weight: 700; margin-top: 4px; }
+
+  /* KMAP */
+  .kmap-wrap { overflow-x: auto; }
+
+  .kmap {
+    display: inline-block;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .kmap-row { display: flex; }
+
+  .kmap-cell {
+    width: 70px;
+    height: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+
+  .kmap-cell.header {
+    background: var(--surface2);
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: default;
+  }
+
+  .kmap-cell.val-1 { color: var(--accent); background: rgba(0,255,157,0.08); }
+  .kmap-cell.val-0 { color: var(--muted); }
+  .kmap-cell.val-x { color: var(--warn); }
+
+  .kmap-cell.grouped { box-shadow: inset 0 0 0 2px var(--accent2); }
+
+  .kmap-cell .minterm {
+    font-size: 9px;
+    color: var(--muted);
+    font-weight: 400;
+    margin-top: 2px;
+  }
+
+  /* GATE SIMULATOR */
+  .gate-toolbar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding: 14px;
+    background: var(--surface2);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
+  .gate-btn {
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .gate-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  #gateCanvas {
+    width: 100%;
+    height: 420px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: crosshair;
+    touch-action: none;
+  }
+
+  /* GATE LEGEND */
+  .gate-legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .legend-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+  }
+
+  .legend-item b { color: var(--accent); font-family: var(--mono); }
+  .legend-item span { color: var(--muted); font-size: 11px; }
+
+  /* BOOLEAN LAWS */
+  .laws-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .law-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  .law-card h4 {
+    font-size: 11px;
+    color: var(--accent2);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+
+  .law {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text);
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border);
+    line-height: 1.6;
+  }
+
+  .law:last-child { border-bottom: none; }
+  .law .eq { color: var(--accent); }
+
+  /* SIMPLIFIER OUTPUT */
+  .steps {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 2;
+  }
+
+  .step { display: flex; gap: 12px; align-items: flex-start; }
+  .step-num { color: var(--muted); min-width: 24px; font-size: 11px; }
+  .step-expr { color: var(--accent); }
+  .step-law { color: var(--accent2); font-size: 11px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 600px) {
+    .panel { padding: 16px; }
+    .tab { padding: 10px 14px; font-size: 12px; }
+    .kmap-cell { width: 55px; height: 50px; font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Logic<span>Lab</span> <span style="font-size:12px;color:var(--muted)">// Boolean & Circuit Simulator</span></div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('truth')">Truth Table</div>
+    <div class="tab" onclick="switchTab('kmap')">K-Map</div>
+    <div class="tab" onclick="switchTab('gates')">Gate Sim</div>
+    <div class="tab" onclick="switchTab('laws')">Boolean Laws</div>
+    <div class="tab" onclick="switchTab('learn')">Learn</div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════
+     TRUTH TABLE
+════════════════════════════════════ -->
+<div id="panel-truth" class="panel active">
+  <div class="section-title">Truth Table Generator</div>
+
+  <div class="hint">
+    <b>Operators:</b> AND → <b>.</b> or <b>&</b> &nbsp;|&nbsp; OR → <b>+</b> or <b>|</b> &nbsp;|&nbsp; NOT → <b>'</b> or <b>~</b> &nbsp;|&nbsp; XOR → <b>^</b><br>
+    <b>Examples:</b> <b>A.B + C'</b> &nbsp;|&nbsp; <b>(A+B).C</b> &nbsp;|&nbsp; <b>A^B^C</b> &nbsp;|&nbsp; <b>~A & (B | C)</b>
+  </div>
+
+  <div class="input-row">
+    <input type="text" id="boolExpr" placeholder="Enter Boolean expression e.g. A.B + C'" value="A.B + C'">
+    <button class="btn btn-primary" onclick="generateTruth()">Generate</button>
+    <button class="btn btn-secondary" onclick="clearTruth()">Clear</button>
+  </div>
+
+  <div id="truthResult"></div>
+</div>
+
+<!-- ══════════════════════════════════
+     K-MAP
+════════════════════════════════════ -->
+<div id="panel-kmap" class="panel">
+  <div class="section-title">Karnaugh Map</div>
+
+  <div class="input-row">
+    <select id="kmapVars" onchange="initKmap()">
+      <option value="2">2 Variables (A, B)</option>
+      <option value="3" selected>3 Variables (A, B, C)</option>
+      <option value="4">4 Variables (A, B, C, D)</option>
+    </select>
+    <button class="btn btn-primary" onclick="solveKmap()">Solve & Group</button>
+    <button class="btn btn-secondary" onclick="clearKmap()">Clear</button>
+    <button class="btn btn-secondary" onclick="fillFromTruth()">Fill from Truth Table</button>
+  </div>
+
+  <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Click cells to toggle 0 → 1 → X (don't care)</p>
+
+  <div class="kmap-wrap">
+    <div id="kmapGrid"></div>
+  </div>
+
+  <div id="kmapResult"></div>
+</div>
+
+<!-- ══════════════════════════════════
+     GATE SIMULATOR
+════════════════════════════════════ -->
+<div id="panel-gates" class="panel">
+  <div class="section-title">Logic Gate Simulator</div>
+
+  <div class="gate-toolbar">
+    <button class="gate-btn" onclick="addGate('INPUT')">+ INPUT</button>
+    <button class="gate-btn" onclick="addGate('OUTPUT')">+ OUTPUT</button>
+    <button class="gate-btn" onclick="addGate('AND')">AND</button>
+    <button class="gate-btn" onclick="addGate('OR')">OR</button>
+    <button class="gate-btn" onclick="addGate('NOT')">NOT</button>
+    <button class="gate-btn" onclick="addGate('NAND')">NAND</button>
+    <button class="gate-btn" onclick="addGate('NOR')">NOR</button>
+    <button class="gate-btn" onclick="addGate('XOR')">XOR</button>
+    <button class="gate-btn" onclick="addGate('XNOR')">XNOR</button>
+    <button class="gate-btn" style="color:var(--danger);border-color:var(--danger)" onclick="clearGates()">Clear All</button>
+  </div>
+
+  <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+    Click a gate button to place it → drag gates to move → click output pin (right dot) then input pin (left dot) to connect → click INPUT to toggle 0/1
+  </p>
+
+  <canvas id="gateCanvas"></canvas>
+
+  <div class="gate-legend">
+    <div class="legend-item"><b>AND</b><br><span>Output 1 only when ALL inputs are 1</span></div>
+    <div class="legend-item"><b>OR</b><br><span>Output 1 when ANY input is 1</span></div>
+    <div class="legend-item"><b>NOT</b><br><span>Inverts the input (0→1, 1→0)</span></div>
+    <div class="legend-item"><b>NAND</b><br><span>AND then inverted</span></div>
+    <div class="legend-item"><b>NOR</b><br><span>OR then inverted</span></div>
+    <div class="legend-item"><b>XOR</b><br><span>Output 1 when inputs are DIFFERENT</span></div>
+    <div class="legend-item"><b>XNOR</b><br><span>Output 1 when inputs are SAME</span></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     BOOLEAN LAWS
+════════════════════════════════════ -->
+<div id="panel-laws" class="panel">
+  <div class="section-title">Boolean Algebra Laws</div>
+  <div class="laws-grid">
+    <div class="law-card">
+      <h4>Identity Laws</h4>
+      <div class="law">A + 0 <span class="eq">= A</span></div>
+      <div class="law">A . 1 <span class="eq">= A</span></div>
+    </div>
+    <div class="law-card">
+      <h4>Null Laws</h4>
+      <div class="law">A + 1 <span class="eq">= 1</span></div>
+      <div class="law">A . 0 <span class="eq">= 0</span></div>
+    </div>
+    <div class="law-card">
+      <h4>Idempotent Laws</h4>
+      <div class="law">A + A <span class="eq">= A</span></div>
+      <div class="law">A . A <span class="eq">= A</span></div>
+    </div>
+    <div class="law-card">
+      <h4>Complement Laws</h4>
+      <div class="law">A + A' <span class="eq">= 1</span></div>
+      <div class="law">A . A' <span class="eq">= 0</span></div>
+    </div>
+    <div class="law-card">
+      <h4>Double Negation</h4>
+      <div class="law">(A')' <span class="eq">= A</span></div>
+    </div>
+    <div class="law-card">
+      <h4>Commutative Laws</h4>
+      <div class="law">A + B <span class="eq">= B + A</span></div>
+      <div class="law">A . B <span class="eq">= B . A</span></div>
+    </div>
+    <div class="law-card">
+      <h4>Associative Laws</h4>
+      <div class="law">(A+B)+C <span class="eq">= A+(B+C)</span></div>
+      <div class="law">(A.B).C <span class="eq">= A.(B.C)</span></div>
+    </div>
+    <div class="law-card">
+      <h4>Distributive Laws</h4>
+      <div class="law">A.(B+C) <span class="eq">= A.B + A.C</span></div>
+      <div class="law">A+(B.C) <span class="eq">= (A+B).(A+C)</span></div>
+    </div>
+    <div class="law-card">
+      <h4>De Morgan's Theorems</h4>
+      <div class="law">(A+B)' <span class="eq">= A'.B'</span></div>
+      <div class="law">(A.B)' <span class="eq">= A'+B'</span></div>
+    </div>
+    <div class="law-card">
+      <h4>Absorption Laws</h4>
+      <div class="law">A + A.B <span class="eq">= A</span></div>
+      <div class="law">A.(A+B) <span class="eq">= A</span></div>
+    </div>
+    <div class="law-card">
+      <h4>Consensus Theorem</h4>
+      <div class="law">A.B + A'.C + B.C <span class="eq">= A.B + A'.C</span></div>
+    </div>
+    <div class="law-card">
+      <h4>XOR Properties</h4>
+      <div class="law">A ⊕ 0 <span class="eq">= A</span></div>
+      <div class="law">A ⊕ A <span class="eq">= 0</span></div>
+      <div class="law">A ⊕ A' <span class="eq">= 1</span></div>
+      <div class="law">A ⊕ 1 <span class="eq">= A'</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     LEARN
+════════════════════════════════════ -->
+<div id="panel-learn" class="panel">
+  <div class="section-title">Learn Digital Logic</div>
+  <div class="laws-grid">
+    <div class="law-card" style="grid-column:1/-1">
+      <h4>What is Boolean Algebra?</h4>
+      <p style="color:var(--muted);font-size:13px;line-height:1.8">
+        Boolean algebra is math where variables can only be <b style="color:var(--accent)">0 (FALSE)</b> or <b style="color:var(--accent)">1 (TRUE)</b>. 
+        Every digital circuit — your phone, your laptop, everything — is built from these simple 0s and 1s combined using logic gates.
+        A Boolean expression like <b style="color:var(--accent);font-family:var(--mono)">A.B + C'</b> means: (A AND B) OR (NOT C).
+      </p>
+    </div>
+    <div class="law-card">
+      <h4>AND Gate ( . )</h4>
+      <p style="color:var(--muted);font-size:13px;line-height:1.8">
+        Like multiplication. Both inputs must be 1 for output to be 1.<br>
+        <b style="color:var(--accent);font-family:var(--mono)">0.0=0, 0.1=0, 1.0=0, 1.1=1</b><br>
+        Think: "A AND B must both be true"
+      </p>
+    </div>
+    <div class="law-card">
+      <h4>OR Gate ( + )</h4>
+      <p style="color:var(--muted);font-size:13px;line-height:1.8">
+        Like addition (but 1+1=1). Any input being 1 makes output 1.<br>
+        <b style="color:var(--accent);font-family:var(--mono)">0+0=0, 0+1=1, 1+0=1, 1+1=1</b><br>
+        Think: "A OR B at least one must be true"
+      </p>
+    </div>
+    <div class="law-card">
+      <h4>NOT Gate ( ' or ~ )</h4>
+      <p style="color:var(--muted);font-size:13px;line-height:1.8">
+        Flips the bit. 0 becomes 1, 1 becomes 0.<br>
+        <b style="color:var(--accent);font-family:var(--mono)">0'=1, 1'=0</b><br>
+        Think: "opposite of whatever A is"
+      </p>
+    </div>
+    <div class="law-card">
+      <h4>What is a K-Map?</h4>
+      <p style="color:var(--muted);font-size:13px;line-height:1.8">
+        Karnaugh Map is a visual tool to simplify Boolean expressions. 
+        You fill a grid with 1s and 0s from your truth table, then group the 1s in rectangles of 1,2,4,8 — each group eliminates one variable from your expression.
+      </p>
+    </div>
+    <div class="law-card">
+      <h4>SOP vs POS</h4>
+      <p style="color:var(--muted);font-size:13px;line-height:1.8">
+        <b style="color:var(--accent)">SOP</b> (Sum of Products) = OR of AND terms<br>
+        Example: <b style="color:var(--accent);font-family:var(--mono)">A.B + A'.C</b><br><br>
+        <b style="color:var(--accent)">POS</b> (Product of Sums) = AND of OR terms<br>
+        Example: <b style="color:var(--accent);font-family:var(--mono)">(A+B).(A'+C)</b>
+      </p>
+    </div>
+    <div class="law-card">
+      <h4>Minterm & Maxterm</h4>
+      <p style="color:var(--muted);font-size:13px;line-height:1.8">
+        <b style="color:var(--accent)">Minterm (m)</b>: Row in truth table where output = 1<br>
+        <b style="color:var(--accent)">Maxterm (M)</b>: Row in truth table where output = 0<br>
+        You can write any Boolean function as Σm(minterms) or ΠM(maxterms)
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════
+   TAB SWITCHING
+════════════════════════════════════ */
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const ids = ['truth','kmap','gates','laws','learn'];
+    t.classList.toggle('active', ids[i] === id);
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  if (id === 'gates') resizeCanvas();
+  if (id === 'kmap') initKmap();
+}
+
+/* ════════════════════════════════════
+   TRUTH TABLE GENERATOR
+════════════════════════════════════ */
+let lastTruthVars = [];
+let lastTruthValues = [];
+
+function parseExpr(expr, vars, vals) {
+  let e = expr.trim();
+  // Replace variable names with values
+  // Sort by length desc to avoid partial replacements
+  const sorted = [...vars].sort((a,b) => b.length - a.length);
+  sorted.forEach((v,i) => {
+    e = e.replace(new RegExp(v, 'g'), vals[vars.indexOf(v)]);
+  });
+  // Normalize operators
+  e = e.replace(/\~/g, '!');
+  e = e.replace(/'/g, '');  // handle postfix NOT separately
+  // We'll re-parse properly below
+  return e;
+}
+
+function evalBool(expr, varMap) {
+  // Normalize input
+  let e = expr.trim();
+  // Replace variables
+  Object.keys(varMap).sort((a,b) => b.length - a.length).forEach(v => {
+    e = e.replace(new RegExp('\\b' + v + '\\b', 'g'), varMap[v]);
+  });
+  // Handle postfix NOT (A' → !A)
+  // Convert A' to NOT pattern - process from right to left
+  e = e.replace(/([01])\'/g, (m, bit) => (bit === '0' ? '1' : '0'));
+  // Handle prefix NOT
+  e = e.replace(/~/g, '!');
+  // AND operators
+  e = e.replace(/\./g, '&&');
+  e = e.replace(/&(?!&)/g, '&&');
+  // OR operators  
+  e = e.replace(/\+/g, '||');
+  e = e.replace(/\|(?!\|)/g, '||');
+  // XOR
+  e = e.replace(/\^/g, '!==');
+
+  try {
+    // eslint-disable-next-line no-new-func
+    const result = new Function('return (' + e + ') ? 1 : 0')();
+    return result;
+  } catch(err) {
+    throw new Error('Invalid expression: ' + err.message);
+  }
+}
+
+function extractVars(expr) {
+  const matches = expr.match(/[A-Z]/g);
+  if (!matches) return [];
+  return [...new Set(matches)].sort();
+}
+
+function generateTruth() {
+  const expr = document.getElementById('boolExpr').value.trim();
+  const resultDiv = document.getElementById('truthResult');
+
+  if (!expr) { resultDiv.innerHTML = '<div class="error">Please enter a Boolean expression</div>'; return; }
+
+  const vars = extractVars(expr);
+  if (vars.length === 0) { resultDiv.innerHTML = '<div class="error">No variables found. Use uppercase letters (A, B, C...)</div>'; return; }
+  if (vars.length > 5) { resultDiv.innerHTML = '<div class="error">Maximum 5 variables supported</div>'; return; }
+
+  const rows = Math.pow(2, vars.length);
+  let tableHTML = '<div class="table-wrap"><table><thead><tr>';
+  vars.forEach(v => tableHTML += `<th>${v}</th>`);
+  tableHTML += `<th style="color:var(--warn)">${expr}</th></tr></thead><tbody>`;
+
+  lastTruthVars = vars;
+  lastTruthValues = [];
+
+  let minterms = [], maxterms = [];
+
+  try {
+    for (let i = 0; i < rows; i++) {
+      const varMap = {};
+      tableHTML += '<tr>';
+      vars.forEach((v, vi) => {
+        const bit = (i >> (vars.length - 1 - vi)) & 1;
+        varMap[v] = bit;
+        tableHTML += `<td class="${bit ? 'one' : 'zero'}">${bit}</td>`;
+      });
+
+      const out = evalBool(expr, varMap);
+      lastTruthValues.push(out);
+      if (out) minterms.push(i); else maxterms.push(i);
+      tableHTML += `<td class="${out ? 'one' : 'zero'}" style="font-size:16px">${out}</td></tr>`;
+    }
+  } catch(e) {
+    resultDiv.innerHTML = `<div class="error">Error: ${e.message}</div>`;
+    return;
+  }
+
+  tableHTML += '</tbody></table></div>';
+
+  const mStr = minterms.length ? `Σm(${minterms.join(', ')})` : 'None (always 0)';
+  const MStr = maxterms.length ? `ΠM(${maxterms.join(', ')})` : 'None (always 1)';
+
+  resultDiv.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div class="result-box">
+        <div class="label">Minterms (output = 1)</div>
+        <div class="value">${mStr}</div>
+      </div>
+      <div class="result-box">
+        <div class="label">Maxterms (output = 0)</div>
+        <div class="value" style="color:var(--muted)">${MStr}</div>
+      </div>
+    </div>
+    ${tableHTML}
+  `;
+}
+
+function clearTruth() {
+  document.getElementById('boolExpr').value = '';
+  document.getElementById('truthResult').innerHTML = '';
+  lastTruthVars = [];
+  lastTruthValues = [];
+}
+
+// Auto generate on enter
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('boolExpr').addEventListener('keydown', e => {
+    if (e.key === 'Enter') generateTruth();
+  });
+  generateTruth();
+  initKmap();
+  initCanvas();
+});
+
+/* ════════════════════════════════════
+   K-MAP
+════════════════════════════════════ */
+let kmapValues = {};
+let kmapVarCount = 3;
+
+const KMAP_LAYOUTS = {
+  2: {
+    rows: [['0','1']],
+    cols: ['B=0','B=1'],
+    rowLabel: 'A',
+    order: [[0,0],[0,1],[1,0],[1,1]],   // AB
+    cellMap: [[0,1],[2,3]]
+  },
+  3: {
+    rows: [['0','1']],
+    cols: ['BC=00','BC=01','BC=11','BC=10'],
+    rowLabel: 'A',
+    cellMap: [[0,1,3,2],[4,5,7,6]]
+  },
+  4: {
+    rows: [['00','01','11','10']],
+    cols: ['CD=00','CD=01','CD=11','CD=10'],
+    rowLabel: 'AB',
+    cellMap: [
+      [0,1,3,2],
+      [4,5,7,6],
+      [12,13,15,14],
+      [8,9,11,10]
+    ]
+  }
+};
+
+function initKmap() {
+  kmapVarCount = parseInt(document.getElementById('kmapVars').value);
+  kmapValues = {};
+  renderKmap();
+}
+
+function renderKmap() {
+  const n = kmapVarCount;
+  const layout = KMAP_LAYOUTS[n];
+  const grid = document.getElementById('kmapGrid');
+
+  let html = '<div class="kmap">';
+
+  const colLabels = n === 2 ? ['B=0','B=1'] :
+                    n === 3 ? ['BC=00','BC=01','BC=11','BC=10'] :
+                              ['CD=00','CD=01','CD=11','CD=10'];
+
+  const rowLabels = n === 2 ? ['A=0','A=1'] :
+                    n === 3 ? ['A=0','A=1'] :
+                              ['AB=00','AB=01','AB=11','AB=10'];
+
+  const cellMap = KMAP_LAYOUTS[n].cellMap;
+
+  // Header row
+  html += '<div class="kmap-row">';
+  html += `<div class="kmap-cell header" style="font-size:10px">${n===4?'AB\\CD':'A\\BC'}</div>`;
+  colLabels.forEach(l => html += `<div class="kmap-cell header">${l}</div>`);
+  html += '</div>';
+
+  // Data rows
+  cellMap.forEach((row, ri) => {
+    html += '<div class="kmap-row">';
+    html += `<div class="kmap-cell header">${rowLabels[ri]}</div>`;
+    row.forEach(minterm => {
+      const v = kmapValues[minterm] ?? 0;
+      const cls = v === 1 ? 'val-1' : v === 'x' ? 'val-x' : 'val-0';
+      const display = v === 'x' ? 'X' : v;
+      html += `<div class="kmap-cell ${cls}" onclick="toggleKmapCell(${minterm})">${display}<div class="minterm">m${minterm}</div></div>`;
+    });
+    html += '</div>';
+  });
+
+  html += '</div>';
+  grid.innerHTML = html;
+}
+
+function toggleKmapCell(minterm) {
+  const cur = kmapValues[minterm] ?? 0;
+  if (cur === 0) kmapValues[minterm] = 1;
+  else if (cur === 1) kmapValues[minterm] = 'x';
+  else kmapValues[minterm] = 0;
+  renderKmap();
+}
+
+function clearKmap() {
+  kmapValues = {};
+  renderKmap();
+  document.getElementById('kmapResult').innerHTML = '';
+}
+
+function fillFromTruth() {
+  if (lastTruthValues.length === 0) {
+    document.getElementById('kmapResult').innerHTML = '<div class="error">Generate a truth table first!</div>';
+    return;
+  }
+  const n = lastTruthVars.length;
+  if (n !== kmapVarCount) {
+    document.getElementById('kmapVars').value = n;
+    kmapVarCount = n;
+  }
+  kmapValues = {};
+  lastTruthValues.forEach((v, i) => { kmapValues[i] = v; });
+  renderKmap();
+  solveKmap();
+}
+
+function solveKmap() {
+  const n = kmapVarCount;
+  const total = Math.pow(2, n);
+  const ones = [];
+  const dontCares = [];
+
+  for (let i = 0; i < total; i++) {
+    if (kmapValues[i] === 1) ones.push(i);
+    else if (kmapValues[i] === 'x') dontCares.push(i);
+  }
+
+  if (ones.length === 0) {
+    document.getElementById('kmapResult').innerHTML = '<div class="result-box"><div class="label">Result</div><div class="value" style="color:var(--muted)">F = 0 (always false)</div></div>';
+    return;
+  }
+  if (ones.length + dontCares.length === total) {
+    document.getElementById('kmapResult').innerHTML = '<div class="result-box"><div class="label">Result</div><div class="value">F = 1 (always true)</div></div>';
+    return;
+  }
+
+  // Simple SOP from minterms (Quine-McCluskey lite)
+  const vars = n === 2 ? ['A','B'] : n === 3 ? ['A','B','C'] : ['A','B','C','D'];
+  const terms = ones.map(m => {
+    let term = '';
+    vars.forEach((v, vi) => {
+      const bit = (m >> (n - 1 - vi)) & 1;
+      term += bit ? v : v + "'";
+    });
+    return term;
+  });
+
+  // Try to simplify adjacent pairs
+  const simplified = simplifyTerms(ones, dontCares, n, vars);
+
+  document.getElementById('kmapResult').innerHTML = `
+    <div class="result-box" style="margin-top:16px">
+      <div class="label">Minterms</div>
+      <div class="value" style="font-size:13px">Σm(${ones.join(', ')})${dontCares.length ? ' + d(' + dontCares.join(', ') + ')' : ''}</div>
+    </div>
+    <div class="result-box">
+      <div class="label">Simplified SOP Expression</div>
+      <div class="value">${simplified}</div>
+    </div>
+    <div class="result-box">
+      <div class="label">Unsimplified SOP (from minterms)</div>
+      <div class="value" style="font-size:12px;color:var(--muted)">${terms.join(' + ')}</div>
+    </div>
+  `;
+}
+
+function simplifyTerms(ones, dontCares, n, vars) {
+  const all = [...ones, ...dontCares];
+  const total = Math.pow(2, n);
+
+  // Find prime implicants by combining minterms
+  let groups = all.map(m => ({ minterms: [m], mask: 0, val: m }));
+  let primeImplicants = [];
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+    const used = new Set();
+    const newGroups = [];
+
+    for (let i = 0; i < groups.length; i++) {
+      for (let j = i + 1; j < groups.length; j++) {
+        const a = groups[i], b = groups[j];
+        if (a.mask !== b.mask) continue;
+        const diff = a.val ^ b.val;
+        // Check if exactly one bit differs
+        if (diff > 0 && (diff & (diff - 1)) === 0 && (diff & a.mask) === 0) {
+          const newGroup = {
+            minterms: [...new Set([...a.minterms, ...b.minterms])],
+            mask: a.mask | diff,
+            val: a.val & b.val
+          };
+          newGroups.push(newGroup);
+          used.add(i);
+          used.add(j);
+          changed = true;
+        }
+      }
+    }
+
+    groups.forEach((g, i) => {
+      if (!used.has(i)) primeImplicants.push(g);
+    });
+
+    groups = newGroups;
+  }
+
+  primeImplicants = [...primeImplicants, ...groups];
+
+  // Filter: only keep those covering at least one actual minterm (not just don't care)
+  const essential = primeImplicants.filter(pi =>
+    pi.minterms.some(m => ones.includes(m))
+  );
+
+  if (essential.length === 0) return ones.map(m => mintermsToTerm(m, n, vars)).join(' + ');
+
+  // Convert prime implicants to terms
+  const terms = essential.map(pi => {
+    let term = '';
+    for (let i = 0; i < n; i++) {
+      const bitPos = n - 1 - i;
+      const mask = 1 << bitPos;
+      if (pi.mask & mask) continue; // eliminated variable
+      const bit = (pi.val >> bitPos) & 1;
+      term += bit ? vars[i] : vars[i] + "'";
+    }
+    return term || '1';
+  });
+
+  // Remove duplicates
+  const unique = [...new Set(terms)];
+  return unique.join(' + ') || '0';
+}
+
+function mintermsToTerm(m, n, vars) {
+  let term = '';
+  vars.forEach((v, vi) => {
+    const bit = (m >> (n - 1 - vi)) & 1;
+    term += bit ? v : v + "'";
+  });
+  return term;
+}
+
+/* ════════════════════════════════════
+   GATE SIMULATOR
+════════════════════════════════════ */
+let gates = [];
+let wires = [];
+let dragging = null;
+let dragOffset = { x: 0, y: 0 };
+let connecting = null; // { gateId, type: 'out' }
+let mousePos = { x: 0, y: 0 };
+let canvas, ctx;
+let gateId = 0;
+
+const GATE_W = 80;
+const GATE_H = 50;
+const PIN_R = 6;
+
+function initCanvas() {
+  canvas = document.getElementById('gateCanvas');
+  resizeCanvas();
+
+  canvas.addEventListener('mousedown', onDown);
+  canvas.addEventListener('mousemove', onMove);
+  canvas.addEventListener('mouseup', onUp);
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); onDown(touchToMouse(e)); }, { passive: false });
+  canvas.addEventListener('touchmove', e => { e.preventDefault(); onMove(touchToMouse(e)); }, { passive: false });
+  canvas.addEventListener('touchend', e => { e.preventDefault(); onUp(touchToMouse(e)); }, { passive: false });
+
+  drawAll();
+}
+
+function resizeCanvas() {
+  if (!canvas) return;
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+}
+
+function touchToMouse(e) {
+  const t = e.touches[0] || e.changedTouches[0];
+  const r = canvas.getBoundingClientRect();
+  return { clientX: t.clientX, offsetX: t.clientX - r.left, offsetY: t.clientY - r.top };
+}
+
+function addGate(type) {
+  const x = 60 + Math.random() * (canvas.width - 180);
+  const y = 60 + Math.random() * (canvas.height - 120);
+  gates.push({ id: gateId++, type, x, y, value: type === 'INPUT' ? 0 : null, label: type === 'INPUT' ? 'IN' : type === 'OUTPUT' ? 'OUT' : type });
+  simulate();
+  drawAll();
+}
+
+function getInputPins(gate) {
+  const pins = [];
+  const count = gate.type === 'NOT' || gate.type === 'INPUT' || gate.type === 'OUTPUT' ? 1 : 2;
+  for (let i = 0; i < count; i++) {
+    const y = gate.y + GATE_H / 2 + (count === 1 ? 0 : (i - 0.5) * 22);
+    pins.push({ x: gate.x, y, gateId: gate.id, pinIndex: i });
+  }
+  return gate.type === 'INPUT' ? [] : pins;
+}
+
+function getOutputPin(gate) {
+  if (gate.type === 'OUTPUT') return null;
+  return { x: gate.x + GATE_W, y: gate.y + GATE_H / 2, gateId: gate.id };
+}
+
+function simulate() {
+  let changed = true;
+  let iterations = 0;
+  while (changed && iterations < 20) {
+    changed = false;
+    iterations++;
+    gates.forEach(g => {
+      if (g.type === 'INPUT') return;
+      const inPins = getInputPins(g);
+      const inVals = inPins.map(pin => {
+        const wire = wires.find(w => w.toGate === g.id && w.toPin === pin.pinIndex);
+        if (!wire) return null;
+        const srcGate = gates.find(gg => gg.id === wire.fromGate);
+        return srcGate ? srcGate.value : null;
+      });
+
+      if (inVals.some(v => v === null)) { if (g.value !== null) { g.value = null; changed = true; } return; }
+
+      let newVal = null;
+      const [a, b] = inVals;
+      switch (g.type) {
+        case 'AND':  newVal = a & b; break;
+        case 'OR':   newVal = a | b; break;
+        case 'NOT':  newVal = a ^ 1; break;
+        case 'NAND': newVal = (a & b) ^ 1; break;
+        case 'NOR':  newVal = (a | b) ^ 1; break;
+        case 'XOR':  newVal = a ^ b; break;
+        case 'XNOR': newVal = (a ^ b) ^ 1; break;
+        case 'OUTPUT': newVal = a; break;
+      }
+      if (g.value !== newVal) { g.value = newVal; changed = true; }
+    });
+  }
+}
+
+function drawAll() {
+  if (!ctx) { ctx = canvas.getContext('2d'); }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < canvas.width; x += 30) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
+  for (let y = 0; y < canvas.height; y += 30) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+
+  // Wires
+  wires.forEach(w => {
+    const from = gates.find(g => g.id === w.fromGate);
+    const to = gates.find(g => g.id === w.toGate);
+    if (!from || !to) return;
+    const p1 = getOutputPin(from);
+    const p2 = getInputPins(to)[w.toPin];
+    if (!p1 || !p2) return;
+    const val = from.value;
+    ctx.strokeStyle = val === 1 ? '#00ff9d' : val === 0 ? '#444' : '#666';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    const mx = (p1.x + p2.x) / 2;
+    ctx.bezierCurveTo(mx, p1.y, mx, p2.y, p2.x, p2.y);
+    ctx.stroke();
+  });
+
+  // Connecting wire in progress
+  if (connecting) {
+    const srcGate = gates.find(g => g.id === connecting.gateId);
+    if (srcGate) {
+      const p = getOutputPin(srcGate);
+      if (p) {
+        ctx.strokeStyle = '#7c3aed';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(mousePos.x, mousePos.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+  }
+
+  // Gates
+  gates.forEach(g => drawGate(g));
+}
+
+function drawGate(g) {
+  const { x, y, type, value, label } = g;
+  const color = value === 1 ? '#00ff9d' : value === 0 ? '#e8e8f0' : '#6b6b80';
+  const bgColor = value === 1 ? 'rgba(0,255,157,0.1)' : 'rgba(255,255,255,0.04)';
+
+  ctx.fillStyle = bgColor;
+  ctx.strokeStyle = value === 1 ? '#00ff9d' : '#2a2a32';
+  ctx.lineWidth = 1.5;
+
+  if (type === 'INPUT') {
+    // Diamond shape for input
+    ctx.beginPath();
+    ctx.moveTo(x + GATE_W/2, y);
+    ctx.lineTo(x + GATE_W, y + GATE_H/2);
+    ctx.lineTo(x + GATE_W/2, y + GATE_H);
+    ctx.lineTo(x, y + GATE_H/2);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.font = 'bold 14px JetBrains Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText(value ?? '?', x + GATE_W/2, y + GATE_H/2 + 5);
+    // Output pin
+    const op = getOutputPin(g);
+    if (op) drawPin(op.x, op.y, color);
+    return;
+  }
+
+  if (type === 'OUTPUT') {
+    // Circle for output
+    ctx.beginPath();
+    ctx.arc(x + GATE_W/2, y + GATE_H/2, GATE_H/2, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.font = 'bold 12px JetBrains Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText(value ?? '?', x + GATE_W/2, y + GATE_H/2 + 5);
+    // Input pin
+    const inp = getInputPins(g);
+    inp.forEach(p => drawPin(p.x, p.y, '#6b6b80'));
+    return;
+  }
+
+  // Regular gate box
+  ctx.beginPath();
+  ctx.roundRect(x, y, GATE_W, GATE_H, 8);
+  ctx.fill(); ctx.stroke();
+
+  // Gate label
+  ctx.fillStyle = color;
+  ctx.font = 'bold 13px JetBrains Mono';
+  ctx.textAlign = 'center';
+  ctx.fillText(label, x + GATE_W/2, y + GATE_H/2 + 5);
+
+  // Input pins
+  getInputPins(g).forEach(p => drawPin(p.x, p.y, '#6b6b80'));
+  // Output pin
+  const op = getOutputPin(g);
+  if (op) drawPin(op.x, op.y, color);
+}
+
+function drawPin(x, y, color) {
+  ctx.beginPath();
+  ctx.arc(x, y, PIN_R, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.strokeStyle = '#0d0d0f';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+function getPos(e) {
+  const r = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / r.width;
+  const scaleY = canvas.height / r.height;
+  return {
+    x: (e.clientX - r.left) * scaleX,
+    y: (e.offsetY !== undefined ? e.offsetY : e.clientY - r.top) * scaleY
+  };
+}
+
+function onDown(e) {
+  const pos = getPos(e);
+  mousePos = pos;
+
+  // Check output pins first (for wiring)
+  for (const g of gates) {
+    const op = getOutputPin(g);
+    if (op && Math.hypot(pos.x - op.x, pos.y - op.y) < PIN_R + 4) {
+      connecting = { gateId: g.id };
+      return;
+    }
+  }
+
+  // Check input pins (for receiving connections)
+  for (const g of gates) {
+    const pins = getInputPins(g);
+    for (let pi = 0; pi < pins.length; pi++) {
+      const p = pins[pi];
+      if (Math.hypot(pos.x - p.x, pos.y - p.y) < PIN_R + 4) {
+        if (connecting) {
+          // Connect
+          wires.push({ fromGate: connecting.gateId, toGate: g.id, toPin: pi });
+          connecting = null;
+          simulate();
+          drawAll();
+          return;
+        }
+      }
+    }
+  }
+
+  // Check gate body (for dragging or toggling)
+  for (let i = gates.length - 1; i >= 0; i--) {
+    const g = gates[i];
+    if (pos.x >= g.x && pos.x <= g.x + GATE_W && pos.y >= g.y && pos.y <= g.y + GATE_H) {
+      if (g.type === 'INPUT' && !connecting) {
+        g.value = g.value === 0 ? 1 : 0;
+        simulate();
+        drawAll();
+        return;
+      }
+      dragging = g;
+      dragOffset = { x: pos.x - g.x, y: pos.y - g.y };
+      return;
+    }
+  }
+
+  // Cancel connection
+  connecting = null;
+  drawAll();
+}
+
+function onMove(e) {
+  const pos = getPos(e);
+  mousePos = pos;
+  if (dragging) {
+    dragging.x = pos.x - dragOffset.x;
+    dragging.y = pos.y - dragOffset.y;
+    drawAll();
+  } else if (connecting) {
+    drawAll();
+  }
+}
+
+function onUp(e) {
+  dragging = null;
+}
+
+function clearGates() {
+  gates = [];
+  wires = [];
+  connecting = null;
+  gateId = 0;
+  drawAll();
+}
+
+window.addEventListener('resize', () => {
+  resizeCanvas();
+  drawAll();
+});
+</script>
+</body>
+</html>
