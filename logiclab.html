@@ -1,0 +1,1766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>LogicLab</title>
+<style>
+/* ── RESET & TOKENS ── */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0d0d0f;--s1:#141417;--s2:#1c1c21;--s3:#242429;
+  --border:#2a2a32;--accent:#00ff9d;--purple:#7c3aed;
+  --red:#ff4d6d;--warn:#ffa500;--blue:#3b82f6;
+  --text:#e8e8f0;--muted:#6b6b80;
+  --mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif;
+  --r:10px;
+}
+html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hidden}
+
+/* ── LAYOUT ── */
+#app{display:flex;flex-direction:column;height:100vh}
+
+/* ── HEADER ── */
+header{background:var(--s1);border-bottom:1px solid var(--border);flex-shrink:0}
+.logo{padding:14px 20px 0;font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent)}
+.logo span{color:var(--muted);font-weight:400;font-size:13px;margin-left:8px}
+nav{display:flex;overflow-x:auto;scrollbar-width:none;padding:0 20px}
+nav::-webkit-scrollbar{display:none}
+.tab{padding:11px 18px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;white-space:nowrap;letter-spacing:.5px;transition:all .15s}
+.tab:hover{color:var(--text)}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* ── PANELS ── */
+#panels{flex:1;overflow-y:auto;min-height:0}
+.panel{padding:20px;display:none;min-height:100%}
+.panel.on{display:block}
+
+/* ── COMMON UI ── */
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end}
+.col{display:flex;flex-direction:column;gap:6px;flex:1;min-width:140px}
+label{font-size:11px;font-weight:600;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
+input[type=text],input[type=number],select,textarea{
+  background:var(--s2);border:1px solid var(--border);color:var(--text);
+  padding:10px 13px;border-radius:8px;font-family:var(--mono);font-size:13px;
+  outline:none;transition:border-color .15s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+select option{background:var(--s2)}
+textarea{resize:vertical;min-height:80px}
+.btn{padding:10px 18px;border:none;border-radius:8px;font-size:12px;font-weight:700;
+  cursor:pointer;letter-spacing:.5px;transition:all .15s;font-family:var(--sans);white-space:nowrap}
+.btn-g{background:var(--accent);color:#000}
+.btn-g:hover{background:#00e68a}
+.btn-s{background:var(--s2);color:var(--text);border:1px solid var(--border)}
+.btn-s:hover{border-color:var(--accent);color:var(--accent)}
+.btn-p{background:var(--purple);color:#fff}
+.btn-r{background:var(--red);color:#fff}
+.sec{font-size:11px;font-weight:700;letter-spacing:2px;color:var(--muted);
+  text-transform:uppercase;margin-bottom:14px}
+.card{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.hint{background:var(--s2);border-left:3px solid var(--purple);border-radius:8px;
+  padding:12px 16px;font-size:12px;font-family:var(--mono);line-height:1.9;margin-bottom:16px;color:var(--muted)}
+.hint b{color:var(--accent)}
+.err{color:var(--red);font-family:var(--mono);font-size:12px;padding:12px;
+  background:rgba(255,77,109,.08);border-radius:8px;border:1px solid rgba(255,77,109,.2);margin-top:10px}
+.ok{color:var(--accent);font-size:12px;margin-top:6px}
+
+/* ── TRUTH TABLE ── */
+.tbl-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px}
+th{background:var(--s2);padding:9px 14px;text-align:center;color:var(--accent);
+  font-weight:700;border-bottom:1px solid var(--border);font-size:12px}
+td{padding:8px 14px;text-align:center;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:nth-child(even) td{background:rgba(255,255,255,.02)}
+.v1{color:var(--accent);font-weight:700}
+.v0{color:var(--muted)}
+
+/* ── KMAP ── */
+.km-grid{display:inline-block;border:2px solid var(--border);border-radius:var(--r);overflow:hidden}
+.km-row{display:flex}
+.km-cell{width:64px;height:56px;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;border:1px solid var(--border);font-family:var(--mono);
+  font-size:17px;font-weight:700;cursor:pointer;transition:all .15s;user-select:none}
+.km-cell.hdr{background:var(--s2);font-size:10px;color:var(--muted);font-weight:600;
+  letter-spacing:.5px;cursor:default;font-family:var(--sans)}
+.km-cell.c1{color:var(--accent);background:rgba(0,255,157,.07)}
+.km-cell.c0{color:var(--muted)}
+.km-cell.cx{color:var(--warn)}
+.km-mt{font-size:9px;color:var(--muted);font-weight:400;margin-top:1px}
+
+/* ── GATE SIM ── */
+.gtbar{display:flex;gap:8px;flex-wrap:wrap;padding:12px;
+  background:var(--s2);border-radius:var(--r);border:1px solid var(--border);margin-bottom:12px}
+.gsel{flex:1;min-width:140px}
+#gcanvas{width:100%;height:420px;background:var(--s1);border:1px solid var(--border);
+  border-radius:var(--r);cursor:crosshair;touch-action:none;display:block}
+.ginfo{font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.7}
+
+/* ── CARDS GRID ── */
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:12px}
+.law{font-family:var(--mono);font-size:12px;padding:5px 0;
+  border-bottom:1px solid var(--border);line-height:1.7}
+.law:last-child{border-bottom:none}
+.law .eq{color:var(--accent)}
+.card h4{font-size:10px;color:var(--purple);letter-spacing:1.5px;
+  text-transform:uppercase;margin-bottom:10px;font-weight:700}
+.card p{font-size:12px;color:var(--muted);line-height:1.8}
+
+/* ── FLIP FLOP ── */
+.ff-box{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.ff-ctrl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ff-state{font-family:var(--mono);font-size:32px;font-weight:700;color:var(--accent);
+  text-align:center;padding:16px;background:var(--s2);border-radius:var(--r);
+  border:1px solid var(--border)}
+.toggle-btn{width:48px;height:28px;background:var(--s3);border:1px solid var(--border);
+  border-radius:14px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.toggle-btn.on{background:var(--accent)}
+.toggle-btn::after{content:'';position:absolute;width:20px;height:20px;background:#fff;
+  border-radius:50%;top:3px;left:3px;transition:left .2s}
+.toggle-btn.on::after{left:23px}
+.sig-label{font-size:12px;color:var(--muted);font-family:var(--mono)}
+
+/* ── WAVEFORM ── */
+#wfcanvas{width:100%;height:180px;background:var(--s1);border:1px solid var(--border);
+  border-radius:var(--r);display:block}
+#sigcanvas{width:100%;height:200px;background:var(--s1);border:1px solid var(--border);
+  border-radius:var(--r);display:block}
+
+/* ── PHASOR ── */
+#phcanvas{width:100%;height:300px;background:var(--s1);border:1px solid var(--border);
+  border-radius:var(--r);display:block}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  .panel{padding:14px}
+  .tab{padding:10px 13px;font-size:11px}
+  .km-cell{width:52px;height:48px;font-size:15px}
+  #gcanvas{height:340px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <div class="logo">Logic<span style="color:var(--accent);font-weight:700">Lab</span><span>// Interactive Electronics Workbench</span></div>
+  <nav id="nav"></nav>
+</header>
+<div id="panels"></div>
+</div>
+
+<script>
+'use strict';
+
+/* ══════════════════════════════════════
+   CORE — Tab engine
+══════════════════════════════════════ */
+const PROXY = 'https://mistral-proxy-2.mraayanshaikh37.workers.dev';
+
+const TABS = [
+  {id:'tt',   label:'Truth Table'},
+  {id:'kmap', label:'K-Map'},
+  {id:'gate', label:'Gate Sim'},
+  {id:'dd',   label:'Digital Design'},
+  {id:'ss',   label:'Signals & Systems'},
+  {id:'nt',   label:'Network Theory'},
+  {id:'laws', label:'Bool Laws'},
+  {id:'learn',label:'Learn'},
+];
+
+const nav = document.getElementById('nav');
+const panels = document.getElementById('panels');
+
+TABS.forEach(t => {
+  const btn = document.createElement('div');
+  btn.className = 'tab'; btn.textContent = t.label;
+  btn.onclick = () => switchTab(t.id);
+  btn.id = 'tab-' + t.id;
+  nav.appendChild(btn);
+
+  const p = document.createElement('div');
+  p.className = 'panel'; p.id = 'panel-' + t.id;
+  panels.appendChild(p);
+});
+
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  document.getElementById('tab-' + id).classList.add('on');
+  document.getElementById('panel-' + id).classList.add('on');
+  if (id === 'gate') GateSim.onShow();
+  if (id === 'ss') SignalsSystems.onShow();
+  if (id === 'nt') NetworkTheory.onShow();
+}
+
+/* ══════════════════════════════════════
+   BOOLEAN PARSER — Recursive Descent
+   Supports: . & (AND), + | (OR), ' ~ ! (NOT), ^ (XOR)
+   Implicit AND: AB = A.B
+   Case insensitive
+══════════════════════════════════════ */
+const BoolParser = (() => {
+  let src, pos;
+
+  const err = msg => { throw new Error(msg); };
+
+  function parse(expr, vars) {
+    src = expr.toUpperCase().replace(/\s/g, '');
+    pos = 0;
+    const tree = parseOR();
+    if (pos < src.length) err('Unexpected character: ' + src[pos]);
+    return tree;
+  }
+
+  function parseOR() {
+    let left = parseXOR();
+    while (pos < src.length && (src[pos] === '+' || src[pos] === '|')) {
+      pos++;
+      left = { op:'OR', l:left, r:parseXOR() };
+    }
+    return left;
+  }
+
+  function parseXOR() {
+    let left = parseAND();
+    while (pos < src.length && src[pos] === '^') {
+      pos++;
+      left = { op:'XOR', l:left, r:parseAND() };
+    }
+    return left;
+  }
+
+  function parseAND() {
+    let left = parseNOT();
+    while (pos < src.length) {
+      // explicit AND: . or &
+      if (src[pos] === '.' || src[pos] === '&') { pos++; left = { op:'AND', l:left, r:parseNOT() }; continue; }
+      // implicit AND: next char is letter or (
+      if (/[A-Z(]/.test(src[pos]) && src[pos] !== ')') { left = { op:'AND', l:left, r:parseNOT() }; continue; }
+      break;
+    }
+    return left;
+  }
+
+  function parseNOT() {
+    if (pos < src.length && (src[pos] === '~' || src[pos] === '!')) {
+      pos++;
+      return { op:'NOT', l:parseNOT() };
+    }
+    return parsePostfix();
+  }
+
+  function parsePostfix() {
+    let node = parsePrimary();
+    while (pos < src.length && src[pos] === "'") {
+      pos++;
+      node = { op:'NOT', l:node };
+    }
+    return node;
+  }
+
+  function parsePrimary() {
+    if (pos >= src.length) err('Unexpected end of expression');
+    if (src[pos] === '(') {
+      pos++;
+      const node = parseOR();
+      if (pos >= src.length || src[pos] !== ')') err('Missing closing )');
+      pos++;
+      return node;
+    }
+    if (/[A-Z]/.test(src[pos])) {
+      const v = src[pos++];
+      return { op:'VAR', name:v };
+    }
+    err('Invalid character: ' + src[pos]);
+  }
+
+  function evaluate(node, env) {
+    switch (node.op) {
+      case 'VAR': return env[node.name] ?? 0;
+      case 'NOT': return evaluate(node.l, env) ^ 1;
+      case 'AND': return evaluate(node.l, env) & evaluate(node.r, env);
+      case 'OR':  return evaluate(node.l, env) | evaluate(node.r, env);
+      case 'XOR': return evaluate(node.l, env) ^ evaluate(node.r, env);
+    }
+  }
+
+  function getVars(node, set = new Set()) {
+    if (!node) return set;
+    if (node.op === 'VAR') set.add(node.name);
+    if (node.l) getVars(node.l, set);
+    if (node.r) getVars(node.r, set);
+    return set;
+  }
+
+  return { parse, evaluate, getVars };
+})();
+
+/* ══════════════════════════════════════
+   AI HELPER
+══════════════════════════════════════ */
+async function askAI(prompt, targetEl) {
+  targetEl.innerHTML = '<span style="color:var(--purple)">✨ AI thinking...</span>';
+  try {
+    const r = await fetch(PROXY, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ model:'mistral-large-latest',
+        messages:[{role:'user', content:prompt}] })
+    });
+    const d = await r.json();
+    const txt = d.choices?.[0]?.message?.content || 'No response.';
+    targetEl.innerHTML = '<b style="color:var(--purple)">✨ AI Explanation</b><br><br>' +
+      txt.split('\n').map(l => l || '<br>').join('<br>');
+  } catch {
+    targetEl.innerHTML = '<span style="color:var(--red)">Could not connect. Check internet.</span>';
+  }
+}
+
+/* ══════════════════════════════════════
+   TRUTH TABLE
+══════════════════════════════════════ */
+const TruthTable = (() => {
+  let lastTree = null, lastVars = [], lastVals = [];
+
+  function init() {
+    const p = document.getElementById('panel-tt');
+    p.innerHTML = `
+      <div class="sec">Truth Table Generator</div>
+      <div class="hint">
+        <b>AND:</b> A.B &nbsp;or&nbsp; AB (implicit) &nbsp;or&nbsp; A&B<br>
+        <b>OR:</b> A+B &nbsp;|&nbsp; <b>NOT:</b> A' &nbsp;or&nbsp; ~A<br>
+        <b>XOR:</b> A^B &nbsp;|&nbsp; <b>Grouping:</b> (A+B).C<br>
+        <b>Examples:</b> A.B+C' &nbsp;|&nbsp; AB+BC'+AC &nbsp;|&nbsp; (A^B).C'+ABC
+      </div>
+      <div class="row">
+        <div class="col">
+          <label>Boolean Expression</label>
+          <input type="text" id="tt-expr" value="A.B + C'" placeholder="e.g. AB+C'">
+        </div>
+        <button class="btn btn-g" onclick="TruthTable.gen()">Generate</button>
+        <button class="btn btn-p" onclick="TruthTable.explain()">✨ AI Explain</button>
+        <button class="btn btn-s" onclick="TruthTable.clear()">Clear</button>
+      </div>
+      <div id="tt-out"></div>
+      <div id="tt-ai" class="card" style="margin-top:14px;display:none;font-size:12px;line-height:1.9"></div>
+    `;
+    document.getElementById('tt-expr').addEventListener('keydown', e => { if (e.key==='Enter') TruthTable.gen(); });
+    TruthTable.gen();
+  }
+
+  function gen() {
+    const expr = document.getElementById('tt-expr').value.trim();
+    const out = document.getElementById('tt-out');
+    if (!expr) { out.innerHTML = ''; return; }
+
+    try {
+      const tree = BoolParser.parse(expr, {});
+      const vars = [...BoolParser.getVars(tree)].sort();
+      if (vars.length === 0) { out.innerHTML = '<div class="err">No variables found</div>'; return; }
+      if (vars.length > 6) { out.innerHTML = '<div class="err">Max 6 variables</div>'; return; }
+
+      lastTree = tree; lastVars = vars; lastVals = [];
+      const rows = 1 << vars.length;
+      const minterms = [], maxterms = [];
+
+      let html = '<div class="tbl-wrap"><table><thead><tr>';
+      vars.forEach(v => html += `<th>${v}</th>`);
+      html += `<th style="color:var(--warn)">${expr}</th></tr></thead><tbody>`;
+
+      for (let i = 0; i < rows; i++) {
+        const env = {};
+        html += '<tr>';
+        vars.forEach((v, vi) => {
+          const bit = (i >> (vars.length - 1 - vi)) & 1;
+          env[v] = bit;
+          html += `<td class="${bit?'v1':'v0'}">${bit}</td>`;
+        });
+        const out1 = BoolParser.evaluate(tree, env);
+        lastVals.push(out1);
+        if (out1) minterms.push(i); else maxterms.push(i);
+        html += `<td class="${out1?'v1':'v0'}" style="font-size:15px">${out1}</td></tr>`;
+      }
+      html += '</tbody></table></div>';
+
+      out.innerHTML = `
+        <div class="row" style="margin-bottom:12px">
+          <div class="card" style="flex:1">
+            <div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Minterms (output=1)</div>
+            <div style="font-family:var(--mono);color:var(--accent);margin-top:4px;font-size:13px">
+              ${minterms.length ? 'Σm(' + minterms.join(', ') + ')' : 'None — always 0'}
+            </div>
+          </div>
+          <div class="card" style="flex:1">
+            <div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Maxterms (output=0)</div>
+            <div style="font-family:var(--mono);color:var(--muted);margin-top:4px;font-size:13px">
+              ${maxterms.length ? 'ΠM(' + maxterms.join(', ') + ')' : 'None — always 1'}
+            </div>
+          </div>
+        </div>
+        ${html}
+      `;
+    } catch(e) {
+      out.innerHTML = `<div class="err">Error: ${e.message}</div>`;
+    }
+  }
+
+  async function explain() {
+    const expr = document.getElementById('tt-expr').value.trim();
+    if (!expr || !lastVars.length) { gen(); if (!lastVars.length) return; }
+    const aiEl = document.getElementById('tt-ai');
+    aiEl.style.display = 'block';
+    const minterms = lastVals.map((v,i) => v?i:-1).filter(i=>i>=0);
+    await askAI(
+      `Explain this Boolean expression for an engineering student learning digital logic:\n\nExpression: ${expr}\nVariables: ${lastVars.join(', ')}\nMinterms: ${minterms.join(', ')}\n\nExplain in simple terms:\n1. What this expression means in plain English\n2. What each operator does\n3. Why certain inputs give output 1\n4. A real-world analogy\nBe friendly, clear, use emojis.`,
+      aiEl
+    );
+  }
+
+  function clear() {
+    document.getElementById('tt-expr').value = '';
+    document.getElementById('tt-out').innerHTML = '';
+    document.getElementById('tt-ai').style.display = 'none';
+    lastTree = null; lastVars = []; lastVals = [];
+  }
+
+  function getLastData() { return { vars: lastVars, vals: lastVals }; }
+
+  return { init, gen, explain, clear, getLastData };
+})();
+
+/* ══════════════════════════════════════
+   K-MAP
+══════════════════════════════════════ */
+const KMap = (() => {
+  let n = 3, vals = {};
+
+  const LAYOUTS = {
+    2: { cols:['B=0','B=1'], rows:['A=0','A=1'], cells:[[0,1],[2,3]] },
+    3: { cols:['BC=00','BC=01','BC=11','BC=10'], rows:['A=0','A=1'], cells:[[0,1,3,2],[4,5,7,6]] },
+    4: { cols:['CD=00','CD=01','CD=11','CD=10'], rows:['AB=00','AB=01','AB=11','AB=10'],
+         cells:[[0,1,3,2],[4,5,7,6],[12,13,15,14],[8,9,11,10]] }
+  };
+
+  function init() {
+    const p = document.getElementById('panel-kmap');
+    p.innerHTML = `
+      <div class="sec">Karnaugh Map Simplifier</div>
+      <div class="row">
+        <div class="col">
+          <label>Variables</label>
+          <select id="km-n" onchange="KMap.reset()">
+            <option value="2">2 Variables (A,B)</option>
+            <option value="3" selected>3 Variables (A,B,C)</option>
+            <option value="4">4 Variables (A,B,C,D)</option>
+          </select>
+        </div>
+        <button class="btn btn-g" onclick="KMap.solve()">Solve & Simplify</button>
+        <button class="btn btn-p" onclick="KMap.fillFromTT()">← From Truth Table</button>
+        <button class="btn btn-s" onclick="KMap.reset()">Clear</button>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:14px">Tap cells → toggle 0 / 1 / X (don't care)</p>
+      <div id="km-grid" style="overflow-x:auto;margin-bottom:16px"></div>
+      <div id="km-out"></div>
+    `;
+    render();
+  }
+
+  function render() {
+    n = parseInt(document.getElementById('km-n').value);
+    const L = LAYOUTS[n];
+    let html = '<div class="km-grid">';
+    // header
+    html += '<div class="km-row">';
+    html += `<div class="km-cell hdr">${n===4?'AB\\CD':'A\\BC'}</div>`;
+    L.cols.forEach(c => html += `<div class="km-cell hdr">${c}</div>`);
+    html += '</div>';
+    // rows
+    L.cells.forEach((row, ri) => {
+      html += '<div class="km-row">';
+      html += `<div class="km-cell hdr">${L.rows[ri]}</div>`;
+      row.forEach(m => {
+        const v = vals[m] ?? 0;
+        const cls = v===1?'c1':v==='x'?'cx':'c0';
+        html += `<div class="km-cell ${cls}" onclick="KMap.toggle(${m})">${v==='x'?'X':v}<div class="km-mt">m${m}</div></div>`;
+      });
+      html += '</div>';
+    });
+    html += '</div>';
+    document.getElementById('km-grid').innerHTML = html;
+  }
+
+  function toggle(m) {
+    const cur = vals[m] ?? 0;
+    vals[m] = cur===0?1:cur===1?'x':0;
+    render();
+  }
+
+  function reset() { vals = {}; render(); document.getElementById('km-out').innerHTML = ''; }
+
+  function fillFromTT() {
+    const { vars, vals:v } = TruthTable.getLastData();
+    if (!v.length) { document.getElementById('km-out').innerHTML = '<div class="err">Generate a truth table first!</div>'; return; }
+    document.getElementById('km-n').value = vars.length;
+    n = vars.length; vals = {};
+    v.forEach((val, i) => vals[i] = val);
+    render(); solve();
+  }
+
+  function solve() {
+    const total = 1 << n;
+    const ones = [], dc = [];
+    for (let i = 0; i < total; i++) {
+      if (vals[i]===1) ones.push(i);
+      else if (vals[i]==='x') dc.push(i);
+    }
+    const vars = n===2?['A','B']:n===3?['A','B','C']:['A','B','C','D'];
+    const out = document.getElementById('km-out');
+
+    if (!ones.length) { out.innerHTML = '<div class="card"><div class="law eq">F = 0</div></div>'; return; }
+    if (ones.length + dc.length === total) { out.innerHTML = '<div class="card"><div class="law eq">F = 1</div></div>'; return; }
+
+    const expr = quineSimplify(ones, dc, n, vars);
+    out.innerHTML = `
+      <div class="card">
+        <div class="law"><span style="color:var(--muted)">Minterms: </span><span class="eq">Σm(${ones.join(',')})${dc.length?' + d('+dc.join(',')+'':''}</span></div>
+        <div class="law" style="margin-top:8px"><span style="color:var(--muted)">Simplified SOP: </span><span class="eq" style="font-size:15px">${expr}</span></div>
+      </div>
+    `;
+  }
+
+  function quineSimplify(ones, dc, n, vars) {
+    const all = [...ones, ...dc];
+    let groups = all.map(m => ({ bits:[m], mask:0, val:m }));
+    const pis = [];
+    let changed = true;
+    while (changed) {
+      changed = false;
+      const used = new Set();
+      const next = [];
+      for (let i = 0; i < groups.length; i++) for (let j = i+1; j < groups.length; j++) {
+        if (groups[i].mask !== groups[j].mask) continue;
+        const d = groups[i].val ^ groups[j].val;
+        if (d && !(d&(d-1)) && !(d&groups[i].mask)) {
+          next.push({ bits:[...new Set([...groups[i].bits,...groups[j].bits])], mask:groups[i].mask|d, val:groups[i].val&groups[j].val });
+          used.add(i); used.add(j); changed = true;
+        }
+      }
+      groups.forEach((g,i) => { if (!used.has(i)) pis.push(g); });
+      groups = next;
+    }
+    pis.push(...groups);
+    const ess = pis.filter(pi => pi.bits.some(b => ones.includes(b)));
+    if (!ess.length) return ones.map(m => mToTerm(m,n,vars)).join(' + ');
+    const terms = [...new Set(ess.map(pi => {
+      let t = '';
+      for (let i = 0; i < n; i++) {
+        if (pi.mask & (1<<(n-1-i))) continue;
+        t += (pi.val>>(n-1-i))&1 ? vars[i] : vars[i]+"'";
+      }
+      return t||'1';
+    }))];
+    return terms.join(' + ') || '0';
+  }
+
+  function mToTerm(m, n, vars) {
+    let t='';
+    vars.forEach((v,i) => t += (m>>(n-1-i))&1 ? v : v+"'");
+    return t;
+  }
+
+  return { init, toggle, reset, fillFromTT, solve };
+})();
+
+/* ══════════════════════════════════════
+   GATE SIMULATOR — IEEE symbols
+══════════════════════════════════════ */
+const GateSim = (() => {
+  let canvas, ctx, gates=[], wires=[], gid=0;
+  let drag=null, dragOff={x:0,y:0}, conn=null, mouse={x:0,y:0};
+  let raf=null, dirty=false;
+  const GW=90, GH=54, PR=6;
+
+  const GATE_TYPES = ['AND','OR','NOT','NAND','NOR','XOR','XNOR','INPUT','OUTPUT'];
+
+  function init() {
+    const p = document.getElementById('panel-gate');
+    p.innerHTML = `
+      <div class="sec">Logic Gate Simulator — IEEE Symbols</div>
+      <div class="gtbar">
+        <div class="col gsel">
+          <label>Gate Type</label>
+          <select id="gt-sel">
+            ${GATE_TYPES.map(g=>`<option value="${g}">${g}</option>`).join('')}
+          </select>
+        </div>
+        <button class="btn btn-g" onclick="GateSim.addFromSelect()">+ Add Gate</button>
+        <button class="btn btn-p" onclick="GateSim.buildFromExpr()">⚡ Build from Expression</button>
+        <button class="btn btn-s" onclick="GateSim.clearAll()">Clear</button>
+      </div>
+      <div class="row" style="margin-bottom:10px">
+        <div class="col">
+          <label>Boolean Expression (for auto-build)</label>
+          <input type="text" id="gate-expr" value="A.B+C'" placeholder="e.g. A.B+C'">
+        </div>
+      </div>
+      <div class="ginfo">
+        <b style="color:var(--accent)">How to use:</b> Select gate type → Add Gate → drag to position →
+        click output pin (right •) then input pin (left •) to wire →
+        click INPUT to toggle 0/1
+      </div>
+      <canvas id="gcanvas"></canvas>
+    `;
+    canvas = document.getElementById('gcanvas');
+    ctx = canvas.getContext('2d');
+    resize();
+
+    canvas.addEventListener('mousedown', e => onDown(ptFromMouse(e)));
+    canvas.addEventListener('mousemove', e => onMove(ptFromMouse(e)));
+    canvas.addEventListener('mouseup',   e => onUp());
+    canvas.addEventListener('touchstart', e => { e.preventDefault(); onDown(ptFromTouch(e)); }, {passive:false});
+    canvas.addEventListener('touchmove',  e => { e.preventDefault(); onMove(ptFromTouch(e)); }, {passive:false});
+    canvas.addEventListener('touchend',   e => { e.preventDefault(); onUp(); }, {passive:false});
+    window.addEventListener('resize', resize);
+
+    requestDraw();
+  }
+
+  function onShow() { if (canvas) { resize(); requestDraw(); } }
+
+  function resize() {
+    if (!canvas) return;
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight || 420;
+    requestDraw();
+  }
+
+  function requestDraw() {
+    if (raf) return;
+    raf = requestAnimationFrame(() => { raf=null; draw(); });
+  }
+
+  function ptFromMouse(e) {
+    const r = canvas.getBoundingClientRect();
+    return { x:(e.clientX-r.left)*(canvas.width/r.width), y:(e.clientY-r.top)*(canvas.height/r.height) };
+  }
+
+  function ptFromTouch(e) {
+    const t = e.touches[0]||e.changedTouches[0];
+    return ptFromMouse({clientX:t.clientX,clientY:t.clientY});
+  }
+
+  function addFromSelect() {
+    const type = document.getElementById('gt-sel').value;
+    addGate(type, 60+Math.random()*(canvas.width-180), 60+Math.random()*(canvas.height-130));
+  }
+
+  function addGate(type, x, y) {
+    gates.push({ id:gid++, type, x, y, val:type==='INPUT'?0:null });
+    simulate(); requestDraw();
+  }
+
+  function clearAll() { gates=[]; wires=[]; conn=null; gid=0; requestDraw(); }
+
+  /* INPUT PINS */
+  function inPins(g) {
+    const n = (g.type==='NOT'||g.type==='INPUT'||g.type==='OUTPUT') ? 1 : 2;
+    if (g.type==='INPUT') return [];
+    return Array.from({length:n}, (_,i) => ({
+      x: g.x, y: g.y+GH/2+(n===1?0:(i-.5)*22), gi:g.id, pi:i
+    }));
+  }
+
+  function outPin(g) {
+    if (g.type==='OUTPUT') return null;
+    return { x:g.x+GW, y:g.y+GH/2, gi:g.id };
+  }
+
+  /* SIMULATE */
+  function simulate() {
+    let changed=true, iter=0;
+    while (changed && iter++<30) {
+      changed=false;
+      gates.forEach(g => {
+        if (g.type==='INPUT') return;
+        const pins = inPins(g);
+        const ins = pins.map(p => {
+          const w = wires.find(w=>w.tg===g.id&&w.tp===p.pi);
+          if (!w) return null;
+          return (gates.find(gg=>gg.id===w.fg)||{}).val ?? null;
+        });
+        if (ins.some(v=>v===null)) { if (g.val!==null){g.val=null;changed=true;} return; }
+        const [a,b] = ins;
+        let v=null;
+        switch(g.type){
+          case 'AND':  v=a&b; break; case 'OR':   v=a|b; break;
+          case 'NOT':  v=a^1; break; case 'NAND': v=(a&b)^1; break;
+          case 'NOR':  v=(a|b)^1; break; case 'XOR':  v=a^b; break;
+          case 'XNOR': v=(a^b)^1; break; case 'OUTPUT': v=a; break;
+        }
+        if (g.val!==v){g.val=v;changed=true;}
+      });
+    }
+  }
+
+  /* DRAW */
+  function draw() {
+    if (!ctx) return;
+    const W=canvas.width, H=canvas.height;
+    ctx.clearRect(0,0,W,H);
+
+    // Grid
+    ctx.strokeStyle='rgba(255,255,255,0.025)';ctx.lineWidth=1;
+    for(let x=0;x<W;x+=30){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<H;y+=30){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+    // Wires
+    wires.forEach(w=>{
+      const fg=gates.find(g=>g.id===w.fg), tg=gates.find(g=>g.id===w.tg);
+      if(!fg||!tg) return;
+      const p1=outPin(fg), p2=inPins(tg)[w.tp];
+      if(!p1||!p2) return;
+      const col = fg.val===1?'#00ff9d':fg.val===0?'#444':'#555';
+      ctx.strokeStyle=col; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(p1.x,p1.y);
+      const mx=(p1.x+p2.x)/2;
+      ctx.bezierCurveTo(mx,p1.y,mx,p2.y,p2.x,p2.y);
+      ctx.stroke();
+    });
+
+    // Live wire
+    if (conn) {
+      const sg=gates.find(g=>g.id===conn.gi);
+      if(sg){ const p=outPin(sg); if(p){
+        ctx.strokeStyle='#7c3aed'; ctx.lineWidth=2; ctx.setLineDash([5,4]);
+        ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(mouse.x,mouse.y); ctx.stroke();
+        ctx.setLineDash([]);
+      }}
+    }
+
+    // Gates
+    gates.forEach(drawGate);
+  }
+
+  function drawGate(g) {
+    const {x,y,type,val} = g;
+    const col = val===1?'#00ff9d':val===0?'#e8e8f0':'#6b6b80';
+
+    ctx.save();
+    ctx.strokeStyle = val===1?'#00ff9d':'#3a3a45';
+    ctx.lineWidth = 1.5;
+    ctx.fillStyle = val===1?'rgba(0,255,157,0.08)':'rgba(255,255,255,0.04)';
+
+    if (type==='INPUT') {
+      // Diamond
+      ctx.beginPath();
+      ctx.moveTo(x+GW/2,y); ctx.lineTo(x+GW,y+GH/2);
+      ctx.lineTo(x+GW/2,y+GH); ctx.lineTo(x,y+GH/2);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle=col; ctx.font='bold 14px JetBrains Mono';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(val??'?', x+GW/2, y+GH/2);
+      drawPin(outPin(g), col);
+    } else if (type==='OUTPUT') {
+      ctx.beginPath();
+      ctx.arc(x+GW/2,y+GH/2,GH/2,0,Math.PI*2);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle=col; ctx.font='bold 12px JetBrains Mono';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(val??'?', x+GW/2, y+GH/2);
+      inPins(g).forEach(p=>drawPin(p,'#555'));
+    } else {
+      // IEEE gate shapes
+      drawIEEEGate(g, col);
+    }
+    ctx.restore();
+  }
+
+  function drawIEEEGate(g, col) {
+    const {x,y,type} = g;
+    const cx=x+GW/2, cy=y+GH/2, hw=GW/2, hh=GH/2;
+
+    ctx.beginPath();
+    switch(type) {
+      case 'AND': case 'NAND':
+        ctx.moveTo(x,y);
+        ctx.lineTo(x+GW*0.45,y);
+        ctx.bezierCurveTo(x+GW+GW*0.1,y, x+GW+GW*0.1,y+GH, x+GW*0.45,y+GH);
+        ctx.lineTo(x,y+GH);
+        ctx.closePath();
+        break;
+      case 'OR': case 'NOR': case 'XOR': case 'XNOR':
+        ctx.moveTo(x,y);
+        ctx.quadraticCurveTo(x+GW*0.4,y, x+GW,cy);
+        ctx.quadraticCurveTo(x+GW*0.4,y+GH, x,y+GH);
+        ctx.quadraticCurveTo(x+GW*0.3,cy, x,y);
+        if (type==='XOR'||type==='XNOR') {
+          ctx.fill(); ctx.stroke();
+          // Extra curve for XOR
+          ctx.beginPath();
+          ctx.moveTo(x-8,y);
+          ctx.quadraticCurveTo(x+GW*0.15,cy, x-8,y+GH);
+          ctx.stroke();
+          ctx.beginPath(); // redraw main for pins
+        }
+        break;
+      case 'NOT':
+        ctx.moveTo(x,y); ctx.lineTo(x+GW*0.7,cy); ctx.lineTo(x,y+GH); ctx.closePath();
+        break;
+    }
+    ctx.fill(); ctx.stroke();
+
+    // Bubble for NAND, NOR, NOT, XNOR
+    if (['NAND','NOR','NOT','XNOR'].includes(type)) {
+      ctx.beginPath();
+      ctx.arc(x+GW+(type==='NOT'?GW*0.15:GW*0.08), cy, 4, 0, Math.PI*2);
+      ctx.fillStyle='#0d0d0f'; ctx.fill();
+      ctx.strokeStyle=col; ctx.stroke();
+    }
+
+    // Label
+    ctx.fillStyle=col; ctx.font='bold 10px Inter';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(type, cx, cy);
+
+    // Pins
+    inPins(g).forEach(p=>drawPin(p,'#555'));
+    const op=outPin(g); if(op) drawPin(op,col);
+  }
+
+  function drawPin(p, col) {
+    if(!p) return;
+    ctx.beginPath(); ctx.arc(p.x,p.y,PR,0,Math.PI*2);
+    ctx.fillStyle=col; ctx.fill();
+    ctx.strokeStyle='#0d0d0f'; ctx.lineWidth=1; ctx.stroke();
+  }
+
+  /* INTERACTION */
+  function onDown(pos) {
+    mouse = pos;
+    // Check output pins first
+    for (const g of gates) {
+      const op = outPin(g);
+      if (op && dist(pos,op)<PR+6) { conn={gi:g.id}; return; }
+    }
+    // Check input pins
+    for (const g of gates) {
+      for (const [i,p] of inPins(g).entries()) {
+        if (dist(pos,p)<PR+6) {
+          if (conn) {
+            wires = wires.filter(w=>!(w.tg===g.id&&w.tp===i)); // remove existing wire
+            wires.push({fg:conn.gi, tg:g.id, tp:i});
+            conn=null; simulate(); requestDraw(); return;
+          }
+        }
+      }
+    }
+    // Toggle INPUT or start drag
+    for (let i=gates.length-1;i>=0;i--) {
+      const g=gates[i];
+      if (pos.x>=g.x&&pos.x<=g.x+GW&&pos.y>=g.y&&pos.y<=g.y+GH) {
+        if (g.type==='INPUT'&&!conn) { g.val^=1; simulate(); requestDraw(); return; }
+        drag=g; dragOff={x:pos.x-g.x,y:pos.y-g.y}; return;
+      }
+    }
+    conn=null; requestDraw();
+  }
+
+  function onMove(pos) {
+    mouse=pos;
+    if (drag) {
+      drag.x=Math.max(0,Math.min(canvas.width-GW,pos.x-dragOff.x));
+      drag.y=Math.max(0,Math.min(canvas.height-GH,pos.y-dragOff.y));
+    }
+    requestDraw();
+  }
+
+  function onUp() { drag=null; }
+
+  function dist(a,b) { return Math.hypot(a.x-b.x,a.y-b.y); }
+
+  /* AUTO BUILD FROM EXPRESSION */
+  function buildFromExpr() {
+    const expr = document.getElementById('gate-expr').value.trim();
+    if (!expr) return;
+    try {
+      const tree = BoolParser.parse(expr, {});
+      const vars = [...BoolParser.getVars(tree)].sort();
+      gates=[]; wires=[]; gid=0;
+      const placed = {};
+      const W=canvas.width, H=canvas.height;
+
+      // Place variables on left
+      vars.forEach((v,i) => {
+        const y = (H/(vars.length+1))*(i+1) - GH/2;
+        const g = {id:gid++, type:'INPUT', x:20, y, val:0, varName:v};
+        gates.push(g); placed[v]=g;
+      });
+
+      // Recursively build tree
+      function buildNode(node, depth, yHint) {
+        if (node.op==='VAR') return placed[node.name];
+        const x = W - depth*(GW+40) - GW - 20;
+        const y = yHint - GH/2;
+        const type = node.op;
+        const g = {id:gid++, type, x:Math.max(GW+30,x), y:Math.max(10,Math.min(H-GH-10,y)), val:null};
+        gates.push(g);
+
+        if (node.l) {
+          const lg = buildNode(node.l, depth+1, yHint-(node.r?12:0));
+          if (lg) wires.push({fg:lg.id, tg:g.id, tp:0});
+        }
+        if (node.r) {
+          const rg = buildNode(node.r, depth+1, yHint+12);
+          if (rg) wires.push({fg:rg.id, tg:g.id, tp:1});
+        }
+        return g;
+      }
+
+      const root = buildNode(tree, 1, H/2);
+      // Output
+      const out = {id:gid++, type:'OUTPUT', x:W-GW-10, y:H/2-GH/2, val:null};
+      gates.push(out);
+      if (root) wires.push({fg:root.id, tg:out.id, tp:0});
+
+      simulate(); requestDraw();
+    } catch(e) {
+      alert('Error: ' + e.message);
+    }
+  }
+
+  return { init, onShow, addFromSelect, buildFromExpr, clearAll };
+})();
+
+/* ══════════════════════════════════════
+   DIGITAL DESIGN — Flip Flops, Counters
+══════════════════════════════════════ */
+const DigitalDesign = (() => {
+  let ffState = { SR:{Q:0,Qb:1}, JK:{Q:0,Qb:1}, D:{Q:0,Qb:1}, T:{Q:0,Qb:1} };
+  let wfCanvas, wfCtx, wfHistory=[];
+
+  function init() {
+    const p = document.getElementById('panel-dd');
+    p.innerHTML = `
+      <div class="sec">Digital Design — Flip Flops & Counters</div>
+
+      <!-- Flip Flop Selector -->
+      <div class="row">
+        <div class="col">
+          <label>Flip Flop Type</label>
+          <select id="ff-type" onchange="DigitalDesign.renderFF()">
+            <option value="SR">SR Flip Flop</option>
+            <option value="JK">JK Flip Flop</option>
+            <option value="D">D Flip Flop</option>
+            <option value="T">T Flip Flop</option>
+          </select>
+        </div>
+        <button class="btn btn-g" onclick="DigitalDesign.clock()">⬆ Clock Pulse</button>
+        <button class="btn btn-s" onclick="DigitalDesign.resetFF()">Reset</button>
+      </div>
+
+      <div id="ff-panel"></div>
+
+      <!-- Waveform -->
+      <div class="sec" style="margin-top:20px">Timing Diagram</div>
+      <canvas id="wfcanvas"></canvas>
+      <div style="margin-top:8px;display:flex;gap:10px">
+        <button class="btn btn-s" onclick="DigitalDesign.clearWF()">Clear Waveform</button>
+        <button class="btn btn-p" onclick="DigitalDesign.explainFF()">✨ Explain this FF</button>
+      </div>
+      <div id="ff-ai" class="card" style="margin-top:14px;display:none;font-size:12px;line-height:1.9"></div>
+
+      <!-- Counter -->
+      <div class="sec" style="margin-top:24px">Binary Counter Simulator</div>
+      <div class="row">
+        <div class="col">
+          <label>Counter Bits</label>
+          <select id="ctr-bits">
+            <option value="2">2-bit (mod 4)</option>
+            <option value="3" selected>3-bit (mod 8)</option>
+            <option value="4">4-bit (mod 16)</option>
+          </select>
+        </div>
+        <div class="col">
+          <label>Type</label>
+          <select id="ctr-type">
+            <option value="up">Up Counter</option>
+            <option value="down">Down Counter</option>
+            <option value="ring">Ring Counter</option>
+          </select>
+        </div>
+        <button class="btn btn-g" onclick="DigitalDesign.ctrClock()">⬆ Clock</button>
+        <button class="btn btn-s" onclick="DigitalDesign.ctrReset()">Reset</button>
+      </div>
+      <div id="ctr-display" class="card" style="text-align:center">
+        <div id="ctr-bits-display" style="font-family:var(--mono);font-size:36px;color:var(--accent);letter-spacing:8px">000</div>
+        <div id="ctr-dec" style="color:var(--muted);font-size:13px;margin-top:6px">Decimal: 0</div>
+      </div>
+      <div id="ctr-table" style="margin-top:12px"></div>
+    `;
+
+    wfCanvas = document.getElementById('wfcanvas');
+    wfCtx = wfCanvas.getContext('2d');
+    // Delay width set to ensure canvas is rendered
+    setTimeout(() => {
+      wfCanvas.width = wfCanvas.offsetWidth || 340;
+      wfCanvas.height = 180;
+    }, 100);
+
+    renderFF();
+  }
+
+  let ctrVal = 0, ctrHistory = [];
+
+  function renderFF() {
+    const type = document.getElementById('ff-type').value;
+    const state = ffState[type];
+    let inputs = '';
+
+    if (type==='SR') inputs = `
+      <div class="ff-ctrl">
+        <div class="sig-label">S</div><div class="toggle-btn ${ffInputs.S?'on':''}" onclick="DigitalDesign.toggleIn('S')" id="btn-S"></div>
+        <div class="sig-label">R</div><div class="toggle-btn ${ffInputs.R?'on':''}" onclick="DigitalDesign.toggleIn('R')" id="btn-R"></div>
+      </div>`;
+    else if (type==='JK') inputs = `
+      <div class="ff-ctrl">
+        <div class="sig-label">J</div><div class="toggle-btn ${ffInputs.J?'on':''}" onclick="DigitalDesign.toggleIn('J')" id="btn-J"></div>
+        <div class="sig-label">K</div><div class="toggle-btn ${ffInputs.K?'on':''}" onclick="DigitalDesign.toggleIn('K')" id="btn-K"></div>
+      </div>`;
+    else if (type==='D') inputs = `
+      <div class="ff-ctrl">
+        <div class="sig-label">D</div><div class="toggle-btn ${ffInputs.D?'on':''}" onclick="DigitalDesign.toggleIn('D')" id="btn-D"></div>
+      </div>`;
+    else inputs = `
+      <div class="ff-ctrl">
+        <div class="sig-label">T</div><div class="toggle-btn ${ffInputs.T?'on':''}" onclick="DigitalDesign.toggleIn('T')" id="btn-T"></div>
+      </div>`;
+
+    document.getElementById('ff-panel').innerHTML = `
+      <div class="ff-box">
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px">INPUTS</div>
+          ${inputs}
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px">STATE</div>
+          <div class="ff-state" style="display:flex;gap:20px;justify-content:center;align-items:center"><span>Q = ${state.Q}</span><span>Q̄ = ${state.Qb}</span></div>
+        </div>
+      </div>
+      <div id="ff-exc" class="hint" style="margin-top:0"></div>
+    `;
+    showExcitation(type);
+  }
+
+  let ffInputs = {S:0,R:0,J:0,K:0,D:0,T:0};
+
+  function toggleIn(name) {
+    ffInputs[name] ^= 1;
+    const btn = document.getElementById('btn-'+name);
+    if(btn) btn.classList.toggle('on', !!ffInputs[name]);
+    showExcitation(document.getElementById('ff-type').value);
+  }
+
+  function showExcitation(type) {
+    const exc = document.getElementById('ff-exc');
+    if (!exc) return;
+    let msg = '';
+    if (type==='SR') msg = `S=${ffInputs.S}, R=${ffInputs.R} → ${ffInputs.S&&ffInputs.R?'<span style="color:var(--red)">INVALID (S=R=1 forbidden)</span>':ffInputs.S?'Set Q=1':ffInputs.R?'Reset Q=0':'Hold state'}`;
+    else if (type==='JK') msg = `J=${ffInputs.J}, K=${ffInputs.K} → ${ffInputs.J&&ffInputs.K?'Toggle Q':ffInputs.J?'Set Q=1':ffInputs.K?'Reset Q=0':'Hold state'}`;
+    else if (type==='D') msg = `D=${ffInputs.D} → On clock: Q will become ${ffInputs.D}`;
+    else msg = `T=${ffInputs.T} → On clock: ${ffInputs.T?'Toggle Q':'Hold state'}`;
+    exc.innerHTML = `<b>Next state: </b>${msg}`;
+  }
+
+  function clock() {
+    const type = document.getElementById('ff-type').value;
+    const state = ffState[type];
+    const prev = state.Q;
+    let next = state.Q;
+
+    if (type==='SR') {
+      if (ffInputs.S&&ffInputs.R) { alert('Invalid state: S=R=1 is forbidden in SR flip flop!'); return; }
+      if (ffInputs.S) next=1; else if (ffInputs.R) next=0;
+    } else if (type==='JK') {
+      if (ffInputs.J&&ffInputs.K) next^=1;
+      else if (ffInputs.J) next=1;
+      else if (ffInputs.K) next=0;
+    } else if (type==='D') {
+      next=ffInputs.D;
+    } else {
+      if (ffInputs.T) next^=1;
+    }
+
+    state.Q=next; state.Qb=next^1;
+    wfHistory.push({type,inputs:{...ffInputs},Q:next});
+    drawWaveform();
+    renderFF();
+  }
+
+  function resetFF() {
+    const type = document.getElementById('ff-type').value;
+    ffState[type]={Q:0,Qb:1};
+    ffInputs={S:0,R:0,J:0,K:0,D:0,T:0};
+    wfHistory=[];
+    drawWaveform();
+    renderFF();
+  }
+
+  function drawWaveform() {
+    if (!wfCtx || !wfCanvas) return;
+    if (!wfCanvas.width || wfCanvas.width < 10) {
+      wfCanvas.width = wfCanvas.offsetWidth || 340;
+      wfCanvas.height = 180;
+    }
+    const W=wfCanvas.width, H=wfCanvas.height;
+    wfCtx.clearRect(0,0,W,H);
+    if (!wfHistory.length) return;
+
+    const rows = ['CLK','Q'];
+    const rH = H/rows.length;
+    const tickW = Math.min(40, (W-60)/wfHistory.length);
+
+    wfCtx.font = '10px JetBrains Mono';
+    wfCtx.fillStyle = '#6b6b80';
+
+    rows.forEach((r,ri) => {
+      const by = ri*rH;
+      wfCtx.fillText(r, 4, by+rH/2+4);
+      wfCtx.strokeStyle='rgba(255,255,255,0.05)';
+      wfCtx.beginPath(); wfCtx.moveTo(0,by+rH); wfCtx.lineTo(W,by+rH); wfCtx.stroke();
+
+      wfCtx.strokeStyle = ri===0?'#ffa500':'#00ff9d';
+      wfCtx.lineWidth=2;
+      wfCtx.beginPath();
+
+      wfHistory.forEach((h,i) => {
+        const x1=50+i*tickW, x2=50+(i+1)*tickW;
+        const val = ri===0?1:h.Q; // CLK always high during entry
+        const y = by + (val?rH*0.2:rH*0.8);
+        if (i===0) wfCtx.moveTo(x1,y);
+        else {
+          const prev = ri===0?1:wfHistory[i-1].Q;
+          const py = by+(prev?rH*0.2:rH*0.8);
+          wfCtx.lineTo(x1,py);
+          // Clock pulse
+          if (ri===0) { wfCtx.lineTo(x1,by+rH*0.8); wfCtx.lineTo(x1+tickW*0.3,by+rH*0.8); wfCtx.lineTo(x1+tickW*0.3,by+rH*0.2); }
+          wfCtx.lineTo(x2,y);
+        }
+        wfCtx.lineTo(x2,y);
+      });
+      wfCtx.stroke();
+    });
+  }
+
+  function clearWF() { wfHistory=[]; drawWaveform(); }
+
+  async function explainFF() {
+    const type = document.getElementById('ff-type').value;
+    const aiEl = document.getElementById('ff-ai');
+    aiEl.style.display='block';
+    await askAI(
+      `Explain the ${type} flip flop to an engineering student:\n1. What it does and how it works\n2. Its truth table\n3. Where it's used in real circuits\n4. Difference from other flip flops\nBe clear, simple, use emojis.`,
+      aiEl
+    );
+  }
+
+  function ctrClock() {
+    const bits = parseInt(document.getElementById('ctr-bits').value);
+    const type = document.getElementById('ctr-type').value;
+    const mod = 1<<bits;
+    const ring = mod;
+
+    if (type==='up') ctrVal=(ctrVal+1)%mod;
+    else if (type==='down') ctrVal=(ctrVal-1+mod)%mod;
+    else { // ring
+      ctrVal = ctrVal===0?1<<(bits-1):(ctrVal>>1);
+    }
+
+    ctrHistory.push(ctrVal);
+    if (ctrHistory.length>16) ctrHistory.shift();
+
+    const bin = ctrVal.toString(2).padStart(bits,'0');
+    document.getElementById('ctr-bits-display').textContent=bin;
+    document.getElementById('ctr-dec').textContent=`Decimal: ${ctrVal}`;
+
+    // Show history
+    let thtml='<div class="tbl-wrap"><table><thead><tr><th>Step</th><th>Binary</th><th>Decimal</th></tr></thead><tbody>';
+    ctrHistory.forEach((v,i)=>thtml+=`<tr><td>${i+1}</td><td class="v1">${v.toString(2).padStart(bits,'0')}</td><td>${v}</td></tr>`);
+    thtml+='</tbody></table></div>';
+    document.getElementById('ctr-table').innerHTML=thtml;
+  }
+
+  function ctrReset() {
+    ctrVal=0; ctrHistory=[];
+    const bits=parseInt(document.getElementById('ctr-bits').value);
+    document.getElementById('ctr-bits-display').textContent='0'.repeat(bits);
+    document.getElementById('ctr-dec').textContent='Decimal: 0';
+    document.getElementById('ctr-table').innerHTML='';
+  }
+
+  return { init, renderFF, toggleIn, clock, resetFF, clearWF, explainFF, ctrClock, ctrReset };
+})();
+
+/* ══════════════════════════════════════
+   SIGNALS & SYSTEMS
+══════════════════════════════════════ */
+const SignalsSystems = (() => {
+  let sigCanvas, sigCtx;
+  let animId=null, t=0;
+
+  function init() {
+    const p = document.getElementById('panel-ss');
+    p.innerHTML = `
+      <div class="sec">Signals & Systems</div>
+
+      <!-- Signal Generator -->
+      <div class="card" style="margin-bottom:16px">
+        <h4>Signal Visualizer</h4>
+        <div class="row">
+          <div class="col">
+            <label>Signal Type</label>
+            <select id="sig-type" onchange="SignalsSystems.drawSig()">
+              <option value="sine">Sine Wave</option>
+              <option value="cosine">Cosine Wave</option>
+              <option value="square">Square Wave</option>
+              <option value="triangle">Triangle Wave</option>
+              <option value="sawtooth">Sawtooth Wave</option>
+              <option value="impulse">Unit Impulse</option>
+              <option value="step">Unit Step</option>
+              <option value="ramp">Unit Ramp</option>
+            </select>
+          </div>
+          <div class="col">
+            <label>Frequency (Hz)</label>
+            <input type="number" id="sig-freq" value="2" min="0.1" max="20" step="0.1" oninput="SignalsSystems.drawSig()">
+          </div>
+          <div class="col">
+            <label>Amplitude</label>
+            <input type="number" id="sig-amp" value="1" min="0.1" max="3" step="0.1" oninput="SignalsSystems.drawSig()">
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn btn-g" onclick="SignalsSystems.toggleAnim()">▶ Animate</button>
+          <button class="btn btn-p" onclick="SignalsSystems.explainSig()">✨ AI Explain</button>
+        </div>
+        <canvas id="sigcanvas" style="margin-top:12px"></canvas>
+      </div>
+
+      <!-- Line Coding -->
+      <div class="card" style="margin-bottom:16px">
+        <h4>Line Coding Visualizer</h4>
+        <div class="row">
+          <div class="col">
+            <label>Bit Stream</label>
+            <input type="text" id="lc-bits" value="10110010" placeholder="e.g. 10110010" oninput="SignalsSystems.drawLC()">
+          </div>
+          <div class="col">
+            <label>Encoding</label>
+            <select id="lc-type" onchange="SignalsSystems.drawLC()">
+              <option value="nrz-l">NRZ-L</option>
+              <option value="nrz-i">NRZ-I</option>
+              <option value="rz">Return to Zero (RZ)</option>
+              <option value="manchester">Manchester</option>
+              <option value="diff-manchester">Differential Manchester</option>
+              <option value="ami">AMI (Bipolar)</option>
+            </select>
+          </div>
+        </div>
+        <canvas id="lccanvas" style="width:100%;height:140px;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);display:block;margin-top:8px"></canvas>
+      </div>
+
+      <!-- Fourier Series -->
+      <div class="card">
+        <h4>Fourier Series Approximation</h4>
+        <div class="row">
+          <div class="col">
+            <label>Wave Type</label>
+            <select id="fs-type" onchange="SignalsSystems.drawFS()">
+              <option value="square">Square Wave</option>
+              <option value="triangle">Triangle Wave</option>
+              <option value="sawtooth">Sawtooth Wave</option>
+            </select>
+          </div>
+          <div class="col">
+            <label>Harmonics (N)</label>
+            <input type="number" id="fs-n" value="5" min="1" max="50" oninput="SignalsSystems.drawFS()">
+          </div>
+        </div>
+        <canvas id="fscanvas" style="width:100%;height:160px;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);display:block;margin-top:8px"></canvas>
+        <div id="fs-terms" style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:10px;line-height:1.8"></div>
+      </div>
+      <div id="ss-ai" class="card" style="margin-top:14px;display:none;font-size:12px;line-height:1.9"></div>
+    `;
+
+    sigCanvas = document.getElementById('sigcanvas');
+    sigCtx = sigCanvas.getContext('2d');
+    sigCanvas.width = sigCanvas.offsetWidth;
+    sigCanvas.height = 200;
+
+    drawSig(); drawLC(); drawFS();
+  }
+
+  function onShow() {
+    if (sigCanvas) { sigCanvas.width=sigCanvas.offsetWidth; drawSig(); }
+    const lcc=document.getElementById('lccanvas');
+    if(lcc){lcc.width=lcc.offsetWidth;drawLC();}
+    const fsc=document.getElementById('fscanvas');
+    if(fsc){fsc.width=fsc.offsetWidth;drawFS();}
+  }
+
+  function drawSignalOnCanvas(canvas2d, ctx2d, fn, color='#00ff9d', label='') {
+    const W=canvas2d.width, H=canvas2d.height;
+    ctx2d.clearRect(0,0,W,H);
+    // Axes
+    ctx2d.strokeStyle='rgba(255,255,255,0.1)'; ctx2d.lineWidth=1;
+    ctx2d.beginPath(); ctx2d.moveTo(0,H/2); ctx2d.lineTo(W,H/2); ctx2d.stroke();
+    ctx2d.beginPath(); ctx2d.moveTo(30,0); ctx2d.lineTo(30,H); ctx2d.stroke();
+    // Labels
+    ctx2d.fillStyle='#6b6b80'; ctx2d.font='10px JetBrains Mono';
+    ctx2d.fillText('0', 32, H/2+12);
+    ctx2d.fillText('t', W-16, H/2-4);
+    if(label){ctx2d.fillStyle=color;ctx2d.fillText(label,4,14);}
+    // Signal
+    ctx2d.strokeStyle=color; ctx2d.lineWidth=2;
+    ctx2d.beginPath();
+    for (let px=30; px<W; px++) {
+      const tv = (px-30)/(W-30)*4*Math.PI;
+      const v = fn(tv);
+      const y = H/2 - v*(H*0.38);
+      px===30?ctx2d.moveTo(px,y):ctx2d.lineTo(px,y);
+    }
+    ctx2d.stroke();
+  }
+
+  function drawSig(tOffset=0) {
+    if(!sigCanvas||!sigCtx) return;
+    const type=document.getElementById('sig-type')?.value||'sine';
+    const freq=parseFloat(document.getElementById('sig-freq')?.value||2);
+    const amp=parseFloat(document.getElementById('sig-amp')?.value||1);
+
+    const fns = {
+      sine:    tv => amp*Math.sin(freq*tv+tOffset),
+      cosine:  tv => amp*Math.cos(freq*tv+tOffset),
+      square:  tv => amp*Math.sign(Math.sin(freq*tv+tOffset)),
+      triangle:tv => amp*(2/Math.PI)*Math.asin(Math.sin(freq*tv+tOffset)),
+      sawtooth:tv => amp*(2*(((freq*tv+tOffset)/(2*Math.PI))%1)-1),
+      impulse: tv => Math.abs(tv-Math.PI)<0.15?amp:0,
+      step:    tv => tv>Math.PI?0:amp,
+      ramp:    tv => Math.min(amp,tv/(2*Math.PI)*amp*2),
+    };
+    drawSignalOnCanvas(sigCanvas, sigCtx, fns[type]||fns.sine, '#00ff9d', type.toUpperCase());
+  }
+
+  let animRunning=false;
+  function toggleAnim() {
+    animRunning=!animRunning;
+    if (animRunning) {
+      const step=()=>{t+=0.04;drawSig(t);animId=requestAnimationFrame(step);};
+      step();
+    } else {
+      cancelAnimationFrame(animId);
+    }
+  }
+
+  function drawLC() {
+    const canvas2d=document.getElementById('lccanvas');
+    if(!canvas2d) return;
+    if(!canvas2d.getContext) return;
+    canvas2d.width=canvas2d.offsetWidth||300;
+    const ctx2d=canvas2d.getContext('2d');
+    const bits=(document.getElementById('lc-bits')?.value||'10110010').replace(/[^01]/g,'');
+    const type=document.getElementById('lc-type')?.value||'nrz-l';
+    if(!bits.length) return;
+
+    const W=canvas2d.width, H=canvas2d.height;
+    const bw=(W-40)/bits.length;
+    ctx2d.clearRect(0,0,W,H);
+
+    // Bit labels
+    ctx2d.fillStyle='#6b6b80'; ctx2d.font='11px JetBrains Mono';
+    bits.split('').forEach((b,i)=>ctx2d.fillText(b,40+i*bw+bw/2-4,14));
+
+    // Grid
+    ctx2d.strokeStyle='rgba(255,255,255,0.06)'; ctx2d.lineWidth=1;
+    bits.split('').forEach((_,i)=>{ctx2d.beginPath();ctx2d.moveTo(40+i*bw,20);ctx2d.lineTo(40+i*bw,H);ctx2d.stroke();});
+
+    // Axis
+    ctx2d.strokeStyle='rgba(255,255,255,0.1)';
+    ctx2d.beginPath();ctx2d.moveTo(40,H/2+10);ctx2d.lineTo(W,H/2+10);ctx2d.stroke();
+
+    ctx2d.strokeStyle='#00ff9d'; ctx2d.lineWidth=2.5;
+    const hi=H*0.25, lo=H*0.75, mid=H/2+10;
+    let prevLvl=null, amiPos=true;
+
+    function hline(x1,x2,y){ctx2d.beginPath();ctx2d.moveTo(x1,y);ctx2d.lineTo(x2,y);ctx2d.stroke();}
+    function vline(x,y1,y2){ctx2d.beginPath();ctx2d.moveTo(x,y1);ctx2d.lineTo(x,y2);ctx2d.stroke();}
+
+    bits.split('').forEach((b,i)=>{
+      const x1=40+i*bw, x2=x1+bw, bit=parseInt(b);
+      let lvl;
+      if(type==='nrz-l') lvl=bit?hi:lo;
+      else if(type==='nrz-i'){lvl=i===0?(bit?lo:hi):(bit?((prevLvl===hi)?lo:hi):prevLvl);}
+      else if(type==='rz'){
+        if(bit){hline(x1,x1+bw/2,hi);vline(x1+bw/2,hi,mid);hline(x1+bw/2,x2,mid);}
+        else hline(x1,x2,mid);
+        prevLvl=mid; return;
+      } else if(type==='manchester'){
+        if(bit){hline(x1,x1+bw/2,hi);vline(x1+bw/2,hi,lo);hline(x1+bw/2,x2,lo);}
+        else{hline(x1,x1+bw/2,lo);vline(x1+bw/2,lo,hi);hline(x1+bw/2,x2,hi);}
+        return;
+      } else if(type==='diff-manchester'){
+        const start=i===0?hi:(prevLvl??hi);
+        const mid1=start===hi?lo:hi;
+        if(!bit){vline(x1,start,mid1);hline(x1,x1+bw/2,mid1);vline(x1+bw/2,mid1,start);hline(x1+bw/2,x2,start);prevLvl=start;}
+        else{hline(x1,x1+bw/2,start);vline(x1+bw/2,start,mid1);hline(x1+bw/2,x2,mid1);prevLvl=mid1;}
+        return;
+      } else { // AMI
+        if(bit===0) lvl=mid;
+        else{lvl=amiPos?hi:lo;amiPos=!amiPos;}
+      }
+      if(prevLvl!==null&&prevLvl!==lvl) vline(x1,prevLvl,lvl);
+      hline(x1,x2,lvl);
+      prevLvl=lvl;
+    });
+  }
+
+  function drawFS() {
+    const canvas2d=document.getElementById('fscanvas');
+    if(!canvas2d) return;
+    canvas2d.width=canvas2d.offsetWidth||300;
+    const ctx2d=canvas2d.getContext('2d');
+    const type=document.getElementById('fs-type')?.value||'square';
+    const N=parseInt(document.getElementById('fs-n')?.value||5);
+    const W=canvas2d.width,H=canvas2d.height;
+    ctx2d.clearRect(0,0,W,H);
+
+    // Axes
+    ctx2d.strokeStyle='rgba(255,255,255,0.1)';ctx2d.lineWidth=1;
+    ctx2d.beginPath();ctx2d.moveTo(0,H/2);ctx2d.lineTo(W,H/2);ctx2d.stroke();
+
+    // Draw approximation
+    ctx2d.strokeStyle='#00ff9d'; ctx2d.lineWidth=2;
+    ctx2d.beginPath();
+    const terms=[];
+    for(let px=0;px<W;px++){
+      const x=(px/W)*2*Math.PI*2;
+      let y=0;
+      if(type==='square'){
+        for(let k=1;k<=N;k+=2){y+=Math.sin(k*x)/k;}
+        y*=4/Math.PI;
+        if(px===0) terms.push('f(t) = (4/π)[sin(t) + sin(3t)/3 + sin(5t)/5 + ...]');
+      } else if(type==='triangle'){
+        for(let k=1;k<=N;k+=2){y+=Math.pow(-1,(k-1)/2)*Math.sin(k*x)/(k*k);}
+        y*=8/(Math.PI*Math.PI);
+        if(px===0) terms.push('f(t) = (8/π²)[sin(t) - sin(3t)/9 + sin(5t)/25 - ...]');
+      } else {
+        for(let k=1;k<=N;k++){y-=Math.sin(k*x)/k;}
+        y*=2/Math.PI; y+=0.5;
+        if(px===0) terms.push('f(t) = 0.5 - (2/π)[sin(t) + sin(2t)/2 + sin(3t)/3 + ...]');
+      }
+      const sy=H/2-y*(H*0.38);
+      px===0?ctx2d.moveTo(px,sy):ctx2d.lineTo(px,sy);
+    }
+    ctx2d.stroke();
+
+    if(terms.length) document.getElementById('fs-terms').textContent=`N=${N}: ${terms[0]}`;
+  }
+
+  async function explainSig() {
+    const type=document.getElementById('sig-type')?.value||'sine';
+    const aiEl=document.getElementById('ss-ai');
+    aiEl.style.display='block';
+    await askAI(`Explain the ${type} signal/wave to an ECE student:\n1. Mathematical definition\n2. Properties (period, frequency, amplitude)\n3. Where it appears in real electronics and communication systems\n4. How it relates to Fourier analysis\nBe clear and use examples.`, aiEl);
+  }
+
+  return { init, onShow, drawSig, toggleAnim, drawLC, drawFS, explainSig };
+})();
+
+/* ══════════════════════════════════════
+   NETWORK THEORY
+══════════════════════════════════════ */
+const NetworkTheory = (() => {
+  let phCanvas, phCtx, phAngle=0, phAnim=null;
+
+  function init() {
+    const p = document.getElementById('panel-nt');
+    p.innerHTML = `
+      <div class="sec">Network Theory</div>
+
+      <!-- Thevenin/Norton -->
+      <div class="card" style="margin-bottom:16px">
+        <h4>Thevenin & Norton Equivalent</h4>
+        <div class="row">
+          <div class="col"><label>Open Circuit Voltage Voc (V)</label><input type="number" id="th-voc" value="12" step="any"></div>
+          <div class="col"><label>Short Circuit Current Isc (A)</label><input type="number" id="th-isc" value="2" step="any"></div>
+        </div>
+        <button class="btn btn-g" onclick="NetworkTheory.solveThevenin()">Calculate</button>
+        <div id="th-out" style="margin-top:14px"></div>
+      </div>
+
+      <!-- KVL/KCL -->
+      <div class="card" style="margin-bottom:16px">
+        <h4>Ohm's Law & Series/Parallel Calculator</h4>
+        <div class="row">
+          <div class="col">
+            <label>Connection Type</label>
+            <select id="rc-type">
+              <option value="series">Series</option>
+              <option value="parallel">Parallel</option>
+            </select>
+          </div>
+          <div class="col">
+            <label>Component Type</label>
+            <select id="rc-comp">
+              <option value="R">Resistors (Ω)</option>
+              <option value="C">Capacitors (μF)</option>
+              <option value="L">Inductors (mH)</option>
+            </select>
+          </div>
+        </div>
+        <div class="col" style="margin-bottom:10px">
+          <label>Values (comma separated)</label>
+          <input type="text" id="rc-vals" value="10,20,30" placeholder="e.g. 10,20,30">
+        </div>
+        <div class="col" style="margin-bottom:10px">
+          <label>Supply Voltage (V) — for current calc</label>
+          <input type="number" id="rc-v" value="12" step="any">
+        </div>
+        <button class="btn btn-g" onclick="NetworkTheory.solveRC()">Calculate</button>
+        <div id="rc-out" style="margin-top:14px"></div>
+      </div>
+
+      <!-- Phasor Diagram -->
+      <div class="card" style="margin-bottom:16px">
+        <h4>Phasor Diagram (AC)</h4>
+        <div class="row">
+          <div class="col"><label>Voltage V (V)</label><input type="number" id="ph-v" value="10" step="any"></div>
+          <div class="col"><label>Resistance R (Ω)</label><input type="number" id="ph-r" value="6" step="any"></div>
+          <div class="col"><label>Reactance X (Ω)</label><input type="number" id="ph-x" value="8" step="any"></div>
+        </div>
+        <div class="row">
+          <button class="btn btn-g" onclick="NetworkTheory.drawPhasor()">Draw Phasor</button>
+          <button class="btn btn-s" onclick="NetworkTheory.animPhasor()">▶ Animate</button>
+          <button class="btn btn-p" onclick="NetworkTheory.explainPhasor()">✨ Explain</button>
+        </div>
+        <canvas id="phcanvas" style="margin-top:12px"></canvas>
+        <div id="ph-out" style="margin-top:10px;font-family:var(--mono);font-size:12px;line-height:2"></div>
+      </div>
+
+      <div id="nt-ai" class="card" style="margin-top:14px;display:none;font-size:12px;line-height:1.9"></div>
+    `;
+
+    phCanvas=document.getElementById('phcanvas');
+    phCtx=phCanvas.getContext('2d');
+    phCanvas.width=phCanvas.offsetWidth;
+    phCanvas.height=300;
+  }
+
+  function onShow() {
+    if(phCanvas){phCanvas.width=phCanvas.offsetWidth;drawPhasor();}
+  }
+
+  function solveThevenin() {
+    const voc=parseFloat(document.getElementById('th-voc').value);
+    const isc=parseFloat(document.getElementById('th-isc').value);
+    if(isNaN(voc)||isNaN(isc)||isc===0){document.getElementById('th-out').innerHTML='<div class="err">Invalid values</div>';return;}
+    const rth=voc/isc;
+    document.getElementById('th-out').innerHTML=`
+      <div class="grid2">
+        <div class="card">
+          <h4>Thevenin Equivalent</h4>
+          <div class="law">V<sub>th</sub> = V<sub>oc</sub> = <span class="eq">${voc} V</span></div>
+          <div class="law">R<sub>th</sub> = V<sub>oc</sub>/I<sub>sc</sub> = <span class="eq">${rth.toFixed(3)} Ω</span></div>
+        </div>
+        <div class="card">
+          <h4>Norton Equivalent</h4>
+          <div class="law">I<sub>N</sub> = I<sub>sc</sub> = <span class="eq">${isc} A</span></div>
+          <div class="law">R<sub>N</sub> = R<sub>th</sub> = <span class="eq">${rth.toFixed(3)} Ω</span></div>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:10px">
+        <b>Relation:</b> V<sub>th</sub> = I<sub>N</sub> × R<sub>th</sub> = ${(isc*rth).toFixed(3)} V ✓
+      </div>
+    `;
+  }
+
+  function solveRC() {
+    const vals=document.getElementById('rc-vals').value.split(',').map(Number).filter(v=>!isNaN(v)&&v>0);
+    const type=document.getElementById('rc-type').value;
+    const comp=document.getElementById('rc-comp').value;
+    const V=parseFloat(document.getElementById('rc-v').value);
+    if(!vals.length){document.getElementById('rc-out').innerHTML='<div class="err">Enter valid values</div>';return;}
+
+    let equiv;
+    const unit=comp==='R'?'Ω':comp==='C'?'μF':'mH';
+
+    if(comp==='R'){
+      equiv=type==='series'?vals.reduce((a,b)=>a+b,0):1/vals.reduce((a,b)=>a+1/b,0);
+    } else if(comp==='C'){
+      equiv=type==='series'?1/vals.reduce((a,b)=>a+1/b,0):vals.reduce((a,b)=>a+b,0);
+    } else {
+      equiv=type==='series'?vals.reduce((a,b)=>a+b,0):1/vals.reduce((a,b)=>a+1/b,0);
+    }
+
+    const I=comp==='R'?V/equiv:null;
+    document.getElementById('rc-out').innerHTML=`
+      <div class="card">
+        <div class="law">${vals.join(' , ')} ${unit} in ${type}</div>
+        <div class="law">Equivalent ${comp}: <span class="eq">${equiv.toFixed(4)} ${unit}</span></div>
+        ${I!==null?`<div class="law">Current (V=${V}V): <span class="eq">${I.toFixed(4)} A</span></div>`:''}
+        ${I!==null?`<div class="law">Power: <span class="eq">${(V*I).toFixed(4)} W</span></div>`:''}
+      </div>
+    `;
+  }
+
+  function drawPhasor(offset=0) {
+    if(!phCanvas||!phCtx) return;
+    const R=parseFloat(document.getElementById('ph-r')?.value||6);
+    const X=parseFloat(document.getElementById('ph-x')?.value||8);
+    const V=parseFloat(document.getElementById('ph-v')?.value||10);
+    const Z=Math.sqrt(R*R+X*X);
+    const phi=Math.atan2(X,R);
+    const I=V/Z;
+    const pf=Math.cos(phi);
+
+    const W=phCanvas.width, H=phCanvas.height;
+    const cx=W/2, cy=H/2, sc=Math.min(W,H)*0.3;
+    phCtx.clearRect(0,0,W,H);
+
+    // Axes
+    phCtx.strokeStyle='rgba(255,255,255,0.1)';phCtx.lineWidth=1;
+    phCtx.beginPath();phCtx.moveTo(0,cy);phCtx.lineTo(W,cy);phCtx.stroke();
+    phCtx.beginPath();phCtx.moveTo(cx,0);phCtx.lineTo(cx,H);phCtx.stroke();
+
+    // Current reference
+    phCtx.strokeStyle='#3b82f6';phCtx.lineWidth=2;
+    phCtx.beginPath();phCtx.moveTo(cx,cy);phCtx.lineTo(cx+sc,cy);phCtx.stroke();
+    phCtx.fillStyle='#3b82f6';phCtx.font='11px JetBrains Mono';
+    phCtx.fillText('I (ref)',cx+sc+6,cy+4);
+
+    // Impedance phasor
+    const ang=phi+offset;
+    const ex=cx+sc*Math.cos(ang)*Z/Z, ey=cy-sc*Math.sin(ang)*Z/Z;
+    drawArrow(phCtx,cx,cy,cx+sc*Math.cos(ang),cy-sc*Math.sin(ang),'#00ff9d','Z');
+
+    // R component
+    drawArrow(phCtx,cx,cy,cx+sc*R/Z,cy,'#ffa500','R');
+    // X component
+    drawArrow(phCtx,cx+sc*R/Z,cy,cx+sc*R/Z,cy-sc*X/Z,'#ff4d6d','X');
+
+    // Angle arc
+    phCtx.strokeStyle='rgba(255,255,255,0.3)';phCtx.lineWidth=1;
+    phCtx.beginPath();phCtx.arc(cx,cy,40,0,-phi,phi<0);phCtx.stroke();
+    phCtx.fillStyle='#fff';phCtx.font='10px JetBrains Mono';
+    phCtx.fillText('φ',cx+46,cy-10);
+
+    document.getElementById('ph-out').innerHTML=`
+      <span style="color:var(--accent)">Z</span> = ${Z.toFixed(3)} Ω &nbsp;|&nbsp;
+      <span style="color:var(--warn)">φ</span> = ${(phi*180/Math.PI).toFixed(2)}° &nbsp;|&nbsp;
+      <span style="color:#3b82f6">I</span> = ${I.toFixed(3)} A &nbsp;|&nbsp;
+      <span style="color:var(--muted)">PF</span> = ${pf.toFixed(3)} ${pf<1?'lagging':'unity'}
+    `;
+  }
+
+  function drawArrow(ctx2d,x1,y1,x2,y2,col,label) {
+    const angle=Math.atan2(y2-y1,x2-x1);
+    ctx2d.strokeStyle=col;ctx2d.lineWidth=2.5;
+    ctx2d.beginPath();ctx2d.moveTo(x1,y1);ctx2d.lineTo(x2,y2);ctx2d.stroke();
+    ctx2d.fillStyle=col;
+    ctx2d.beginPath();
+    ctx2d.moveTo(x2,y2);
+    ctx2d.lineTo(x2-10*Math.cos(angle-0.4),y2-10*Math.sin(angle-0.4));
+    ctx2d.lineTo(x2-10*Math.cos(angle+0.4),y2-10*Math.sin(angle+0.4));
+    ctx2d.closePath();ctx2d.fill();
+    ctx2d.font='11px JetBrains Mono';
+    ctx2d.fillText(label,x2+8,y2);
+  }
+
+  function animPhasor() {
+    if(phAnim){cancelAnimationFrame(phAnim);phAnim=null;return;}
+    let a=0;
+    const step=()=>{a+=0.02;drawPhasor(a);phAnim=requestAnimationFrame(step);};
+    step();
+  }
+
+  async function explainPhasor() {
+    const R=document.getElementById('ph-r')?.value||6;
+    const X=document.getElementById('ph-x')?.value||8;
+    const Z=Math.sqrt(R*R+X*X);
+    const aiEl=document.getElementById('nt-ai');
+    aiEl.style.display='block';
+    await askAI(
+      `Explain phasor diagrams and impedance to an ECE student. For this circuit:\nR=${R}Ω, X=${X}Ω, Z=${Z.toFixed(2)}Ω\n\nExplain:\n1. What a phasor is\n2. Why we use them for AC circuits\n3. What impedance Z means\n4. What the phase angle tells us\n5. Power factor and its importance\nBe clear with examples.`,
+      aiEl
+    );
+  }
+
+  return { init, onShow, solveThevenin, solveRC, drawPhasor, animPhasor, explainPhasor };
+})();
+
+/* ══════════════════════════════════════
+   BOOLEAN LAWS
+══════════════════════════════════════ */
+function initLaws() {
+  const LAWS = [
+    {title:'Identity',laws:['A + 0 = A','A . 1 = A']},
+    {title:'Null',laws:['A + 1 = 1','A . 0 = 0']},
+    {title:'Idempotent',laws:['A + A = A','A . A = A']},
+    {title:'Complement',laws:["A + A' = 1","A . A' = 0"]},
+    {title:'Double Negation',laws:["(A')' = A"]},
+    {title:'Commutative',laws:['A + B = B + A','A . B = B . A']},
+    {title:'Associative',laws:['(A+B)+C = A+(B+C)','(A.B).C = A.(B.C)']},
+    {title:'Distributive',laws:['A.(B+C) = A.B + A.C','A+(B.C) = (A+B).(A+C)']},
+    {title:"De Morgan's",laws:["(A+B)' = A'.B'","(A.B)' = A'+B'"]},
+    {title:'Absorption',laws:['A + A.B = A','A.(A+B) = A']},
+    {title:'XOR Properties',laws:['A ⊕ 0 = A','A ⊕ A = 0',"A ⊕ A' = 1",'A ⊕ 1 = A\'']},
+    {title:'Consensus',laws:["A.B + A'.C + B.C = A.B + A'.C"]},
+  ];
+
+  const p = document.getElementById('panel-laws');
+  p.innerHTML = `<div class="sec">Boolean Algebra Laws</div><div class="grid2">` +
+    LAWS.map(g=>`<div class="card"><h4>${g.title}</h4>${g.laws.map(l=>`<div class="law"><span class="eq">${l}</span></div>`).join('')}</div>`).join('') +
+    '</div>';
+}
+
+/* ══════════════════════════════════════
+   LEARN
+══════════════════════════════════════ */
+function initLearn() {
+  const p = document.getElementById('panel-learn');
+  const topics = [
+    {t:'What is Boolean Algebra?',b:'Math where variables are only 0 (FALSE) or 1 (TRUE). Every digital device uses Boolean logic. Expression A.B+C\' means (A AND B) OR (NOT C).'},
+    {t:'AND Gate ( . )',b:'Output 1 only when ALL inputs are 1. Like multiplication. 0.0=0, 0.1=0, 1.0=0, 1.1=1. Think: both conditions must be true.'},
+    {t:'OR Gate ( + )',b:'Output 1 when ANY input is 1. 0+0=0, 0+1=1, 1+0=1, 1+1=1. Think: at least one condition is true.'},
+    {t:'NOT Gate ( \' or ~ )',b:'Inverts the input. 0→1, 1→0. Also called inverter. Think: opposite of whatever the input is.'},
+    {t:'NAND & NOR',b:'NAND = NOT AND. NOR = NOT OR. Universal gates — any logic circuit can be built using only NANDs or only NORs.'},
+    {t:'XOR Gate ( ^ )',b:'Output 1 when inputs are DIFFERENT. 0⊕0=0, 0⊕1=1, 1⊕0=1, 1⊕1=0. Used in adders and error detection.'},
+    {t:'What is a K-Map?',b:'Karnaugh Map simplifies Boolean expressions visually. Fill grid from truth table, group 1s in rectangles of 1,2,4,8. Each group eliminates one variable.'},
+    {t:'SOP vs POS',b:'SOP (Sum of Products) = OR of AND terms: A.B + A\'.C\nPOS (Product of Sums) = AND of OR terms: (A+B).(A\'+C)'},
+    {t:'Flip Flop Basics',b:'A flip flop stores 1 bit. It has two stable states (Q=0 or Q=1) and changes state on a clock edge. SR, JK, D, T are the main types.'},
+    {t:'What is a Phasor?',b:'A phasor represents a sinusoidal signal as a rotating vector. Magnitude = amplitude, angle = phase. Used in AC circuit analysis to simplify math.'},
+    {t:'Fourier Series',b:'Any periodic signal can be built from sine and cosine waves of different frequencies. f(t) = a0 + Σ(an.cos(nwt) + bn.sin(nwt))'},
+    {t:'Thevenin\'s Theorem',b:'Any linear circuit with sources and resistors can be replaced by a single voltage source (Vth) in series with a resistance (Rth). Simplifies complex circuit analysis.'},
+  ];
+
+  p.innerHTML = `<div class="sec">Learn Electronics</div><div class="grid2">` +
+    topics.map(t=>`<div class="card"><h4>${t.t}</h4><p>${t.b}</p></div>`).join('') +
+    '</div>';
+}
+
+/* ══════════════════════════════════════
+   BOOT
+══════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  TruthTable.init();
+  KMap.init();
+  GateSim.init();
+  DigitalDesign.init();
+  SignalsSystems.init();
+  NetworkTheory.init();
+  initLaws();
+  initLearn();
+  switchTab('tt');
+});
+</script>
+</body>
+</html>
