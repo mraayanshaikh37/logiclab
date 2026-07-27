@@ -2,641 +2,501 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LogicLab — Boolean & Circuit Simulator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>LogicLab</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;700&display=swap');
+/* ── RESET & TOKENS ── */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0d0d0f;--s1:#141417;--s2:#1c1c21;--s3:#242429;
+  --border:#2a2a32;--accent:#00ff9d;--purple:#7c3aed;
+  --red:#ff4d6d;--warn:#ffa500;--blue:#3b82f6;
+  --text:#e8e8f0;--muted:#6b6b80;
+  --mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif;
+  --r:10px;
+}
+html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hidden}
 
-  :root {
-    --bg: #0d0d0f;
-    --surface: #141417;
-    --surface2: #1c1c21;
-    --border: #2a2a32;
-    --accent: #00ff9d;
-    --accent2: #7c3aed;
-    --danger: #ff4d6d;
-    --warn: #ffa500;
-    --text: #e8e8f0;
-    --muted: #6b6b80;
-    --mono: 'JetBrains Mono', monospace;
-    --sans: 'Inter', sans-serif;
-  }
+/* ── LAYOUT ── */
+#app{display:flex;flex-direction:column;height:100vh}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── HEADER ── */
+header{background:var(--s1);border-bottom:1px solid var(--border);flex-shrink:0}
+.logo{padding:14px 20px 0;font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent)}
+.logo span{color:var(--muted);font-weight:400;font-size:13px;margin-left:8px}
+nav{display:flex;overflow-x:auto;scrollbar-width:none;padding:0 20px}
+nav::-webkit-scrollbar{display:none}
+.tab{padding:11px 18px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;white-space:nowrap;letter-spacing:.5px;transition:all .15s}
+.tab:hover{color:var(--text)}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+/* ── PANELS ── */
+#panels{flex:1;overflow:hidden;position:relative}
+.panel{position:absolute;inset:0;overflow-y:auto;padding:20px;display:none}
+.panel.on{display:block}
 
-  /* HEADER */
-  header {
-    padding: 20px 24px 0;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-  }
+/* ── COMMON UI ── */
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end}
+.col{display:flex;flex-direction:column;gap:6px;flex:1;min-width:140px}
+label{font-size:11px;font-weight:600;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
+input[type=text],input[type=number],select,textarea{
+  background:var(--s2);border:1px solid var(--border);color:var(--text);
+  padding:10px 13px;border-radius:8px;font-family:var(--mono);font-size:13px;
+  outline:none;transition:border-color .15s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+select option{background:var(--s2)}
+textarea{resize:vertical;min-height:80px}
+.btn{padding:10px 18px;border:none;border-radius:8px;font-size:12px;font-weight:700;
+  cursor:pointer;letter-spacing:.5px;transition:all .15s;font-family:var(--sans);white-space:nowrap}
+.btn-g{background:var(--accent);color:#000}
+.btn-g:hover{background:#00e68a}
+.btn-s{background:var(--s2);color:var(--text);border:1px solid var(--border)}
+.btn-s:hover{border-color:var(--accent);color:var(--accent)}
+.btn-p{background:var(--purple);color:#fff}
+.btn-r{background:var(--red);color:#fff}
+.sec{font-size:11px;font-weight:700;letter-spacing:2px;color:var(--muted);
+  text-transform:uppercase;margin-bottom:14px}
+.card{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.hint{background:var(--s2);border-left:3px solid var(--purple);border-radius:8px;
+  padding:12px 16px;font-size:12px;font-family:var(--mono);line-height:1.9;margin-bottom:16px;color:var(--muted)}
+.hint b{color:var(--accent)}
+.err{color:var(--red);font-family:var(--mono);font-size:12px;padding:12px;
+  background:rgba(255,77,109,.08);border-radius:8px;border:1px solid rgba(255,77,109,.2);margin-top:10px}
+.ok{color:var(--accent);font-size:12px;margin-top:6px}
 
-  .logo {
-    font-family: var(--mono);
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--accent);
-    letter-spacing: -0.5px;
-    margin-bottom: 16px;
-  }
+/* ── TRUTH TABLE ── */
+.tbl-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px}
+th{background:var(--s2);padding:9px 14px;text-align:center;color:var(--accent);
+  font-weight:700;border-bottom:1px solid var(--border);font-size:12px}
+td{padding:8px 14px;text-align:center;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:nth-child(even) td{background:rgba(255,255,255,.02)}
+.v1{color:var(--accent);font-weight:700}
+.v0{color:var(--muted)}
 
-  .logo span { color: var(--muted); font-weight: 400; }
+/* ── KMAP ── */
+.km-grid{display:inline-block;border:2px solid var(--border);border-radius:var(--r);overflow:hidden}
+.km-row{display:flex}
+.km-cell{width:64px;height:56px;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;border:1px solid var(--border);font-family:var(--mono);
+  font-size:17px;font-weight:700;cursor:pointer;transition:all .15s;user-select:none}
+.km-cell.hdr{background:var(--s2);font-size:10px;color:var(--muted);font-weight:600;
+  letter-spacing:.5px;cursor:default;font-family:var(--sans)}
+.km-cell.c1{color:var(--accent);background:rgba(0,255,157,.07)}
+.km-cell.c0{color:var(--muted)}
+.km-cell.cx{color:var(--warn)}
+.km-mt{font-size:9px;color:var(--muted);font-weight:400;margin-top:1px}
 
-  /* TABS */
-  .tabs {
-    display: flex;
-    gap: 0;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
+/* ── GATE SIM ── */
+.gtbar{display:flex;gap:8px;flex-wrap:wrap;padding:12px;
+  background:var(--s2);border-radius:var(--r);border:1px solid var(--border);margin-bottom:12px}
+.gsel{flex:1;min-width:140px}
+#gcanvas{width:100%;height:420px;background:var(--s1);border:1px solid var(--border);
+  border-radius:var(--r);cursor:crosshair;touch-action:none;display:block}
+.ginfo{font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.7}
 
-  .tabs::-webkit-scrollbar { display: none; }
+/* ── CARDS GRID ── */
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:12px}
+.law{font-family:var(--mono);font-size:12px;padding:5px 0;
+  border-bottom:1px solid var(--border);line-height:1.7}
+.law:last-child{border-bottom:none}
+.law .eq{color:var(--accent)}
+.card h4{font-size:10px;color:var(--purple);letter-spacing:1.5px;
+  text-transform:uppercase;margin-bottom:10px;font-weight:700}
+.card p{font-size:12px;color:var(--muted);line-height:1.8}
 
-  .tab {
-    padding: 12px 20px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--muted);
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    white-space: nowrap;
-    transition: all 0.15s;
-    letter-spacing: 0.3px;
-  }
+/* ── FLIP FLOP ── */
+.ff-box{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.ff-ctrl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ff-state{font-family:var(--mono);font-size:32px;font-weight:700;color:var(--accent);
+  text-align:center;padding:16px;background:var(--s2);border-radius:var(--r);
+  border:1px solid var(--border)}
+.toggle-btn{width:48px;height:28px;background:var(--s3);border:1px solid var(--border);
+  border-radius:14px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.toggle-btn.on{background:var(--accent)}
+.toggle-btn::after{content:'';position:absolute;width:20px;height:20px;background:#fff;
+  border-radius:50%;top:3px;left:3px;transition:left .2s}
+.toggle-btn.on::after{left:23px}
+.sig-label{font-size:12px;color:var(--muted);font-family:var(--mono)}
 
-  .tab:hover { color: var(--text); }
-  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+/* ── WAVEFORM ── */
+#wfcanvas{width:100%;height:180px;background:var(--s1);border:1px solid var(--border);
+  border-radius:var(--r);display:block}
+#sigcanvas{width:100%;height:200px;background:var(--s1);border:1px solid var(--border);
+  border-radius:var(--r);display:block}
 
-  /* PANELS */
-  .panel { display: none; padding: 24px; }
-  .panel.active { display: block; }
+/* ── PHASOR ── */
+#phcanvas{width:100%;height:300px;background:var(--s1);border:1px solid var(--border);
+  border-radius:var(--r);display:block}
 
-  /* SECTION TITLES */
-  .section-title {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 16px;
-  }
-
-  /* INPUT ROW */
-  .input-row {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-  }
-
-  input[type="text"], select {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 11px 14px;
-    border-radius: 8px;
-    font-family: var(--mono);
-    font-size: 14px;
-    flex: 1;
-    min-width: 200px;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-
-  input[type="text"]:focus, select:focus { border-color: var(--accent); }
-
-  select option { background: var(--surface2); }
-
-  .btn {
-    padding: 11px 20px;
-    border: none;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    letter-spacing: 0.5px;
-    transition: all 0.15s;
-    font-family: var(--sans);
-  }
-
-  .btn-primary { background: var(--accent); color: #000; }
-  .btn-primary:hover { background: #00e68a; }
-  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
-  .btn-danger { background: var(--danger); color: #fff; }
-
-  /* SYNTAX HINT */
-  .hint {
-    font-size: 12px;
-    color: var(--muted);
-    margin-bottom: 20px;
-    font-family: var(--mono);
-    background: var(--surface2);
-    padding: 10px 14px;
-    border-radius: 8px;
-    border-left: 3px solid var(--accent2);
-    line-height: 1.8;
-  }
-
-  .hint b { color: var(--accent); }
-
-  /* TRUTH TABLE */
-  .table-wrap {
-    overflow-x: auto;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-family: var(--mono);
-    font-size: 14px;
-  }
-
-  th {
-    background: var(--surface2);
-    padding: 10px 16px;
-    text-align: center;
-    color: var(--accent);
-    font-weight: 700;
-    border-bottom: 1px solid var(--border);
-    font-size: 13px;
-  }
-
-  td {
-    padding: 9px 16px;
-    text-align: center;
-    border-bottom: 1px solid var(--border);
-  }
-
-  tr:last-child td { border-bottom: none; }
-  tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
-
-  td.one { color: var(--accent); font-weight: 700; }
-  td.zero { color: var(--muted); }
-
-  /* ERROR */
-  .error {
-    color: var(--danger);
-    font-family: var(--mono);
-    font-size: 13px;
-    padding: 12px 16px;
-    background: rgba(255,77,109,0.1);
-    border-radius: 8px;
-    border: 1px solid rgba(255,77,109,0.3);
-    margin-top: 12px;
-  }
-
-  /* RESULT BOX */
-  .result-box {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px;
-    margin-bottom: 20px;
-    font-family: var(--mono);
-    font-size: 13px;
-    line-height: 1.8;
-  }
-
-  .result-box .label { color: var(--muted); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
-  .result-box .value { color: var(--accent); font-size: 15px; font-weight: 700; margin-top: 4px; }
-
-  /* KMAP */
-  .kmap-wrap { overflow-x: auto; }
-
-  .kmap {
-    display: inline-block;
-    border: 2px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-    margin-bottom: 20px;
-  }
-
-  .kmap-row { display: flex; }
-
-  .kmap-cell {
-    width: 70px;
-    height: 60px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--border);
-    font-family: var(--mono);
-    font-size: 18px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.15s;
-    position: relative;
-  }
-
-  .kmap-cell.header {
-    background: var(--surface2);
-    font-size: 11px;
-    color: var(--muted);
-    font-weight: 600;
-    letter-spacing: 1px;
-    cursor: default;
-  }
-
-  .kmap-cell.val-1 { color: var(--accent); background: rgba(0,255,157,0.08); }
-  .kmap-cell.val-0 { color: var(--muted); }
-  .kmap-cell.val-x { color: var(--warn); }
-
-  .kmap-cell.grouped { box-shadow: inset 0 0 0 2px var(--accent2); }
-
-  .kmap-cell .minterm {
-    font-size: 9px;
-    color: var(--muted);
-    font-weight: 400;
-    margin-top: 2px;
-  }
-
-  /* GATE SIMULATOR */
-  .gate-toolbar {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
-    padding: 14px;
-    background: var(--surface2);
-    border-radius: 10px;
-    border: 1px solid var(--border);
-  }
-
-  .gate-btn {
-    padding: 8px 14px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--surface);
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  .gate-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-  #gateCanvas {
-    width: 100%;
-    height: 420px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    cursor: crosshair;
-    touch-action: none;
-  }
-
-  /* GATE LEGEND */
-  .gate-legend {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 10px;
-    margin-top: 16px;
-  }
-
-  .legend-item {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 12px;
-  }
-
-  .legend-item b { color: var(--accent); font-family: var(--mono); }
-  .legend-item span { color: var(--muted); font-size: 11px; }
-
-  /* BOOLEAN LAWS */
-  .laws-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 12px;
-    margin-top: 16px;
-  }
-
-  .law-card {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px;
-  }
-
-  .law-card h4 {
-    font-size: 11px;
-    color: var(--accent2);
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-    font-weight: 700;
-  }
-
-  .law {
-    font-family: var(--mono);
-    font-size: 13px;
-    color: var(--text);
-    padding: 5px 0;
-    border-bottom: 1px solid var(--border);
-    line-height: 1.6;
-  }
-
-  .law:last-child { border-bottom: none; }
-  .law .eq { color: var(--accent); }
-
-  /* SIMPLIFIER OUTPUT */
-  .steps {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px;
-    font-family: var(--mono);
-    font-size: 13px;
-    line-height: 2;
-  }
-
-  .step { display: flex; gap: 12px; align-items: flex-start; }
-  .step-num { color: var(--muted); min-width: 24px; font-size: 11px; }
-  .step-expr { color: var(--accent); }
-  .step-law { color: var(--accent2); font-size: 11px; }
-
-  /* RESPONSIVE */
-  @media (max-width: 600px) {
-    .panel { padding: 16px; }
-    .tab { padding: 10px 14px; font-size: 12px; }
-    .kmap-cell { width: 55px; height: 50px; font-size: 16px; }
-  }
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  .panel{padding:14px}
+  .tab{padding:10px 13px;font-size:11px}
+  .km-cell{width:52px;height:48px;font-size:15px}
+  #gcanvas{height:340px}
+}
 </style>
 </head>
 <body>
-
+<div id="app">
 <header>
-  <div class="logo">Logic<span>Lab</span> <span style="font-size:12px;color:var(--muted)">// Boolean & Circuit Simulator</span></div>
-  <div class="tabs">
-    <div class="tab active" onclick="switchTab('truth')">Truth Table</div>
-    <div class="tab" onclick="switchTab('kmap')">K-Map</div>
-    <div class="tab" onclick="switchTab('gates')">Gate Sim</div>
-    <div class="tab" onclick="switchTab('laws')">Boolean Laws</div>
-    <div class="tab" onclick="switchTab('learn')">Learn</div>
-  </div>
+  <div class="logo">Logic<span style="color:var(--accent);font-weight:700">Lab</span><span>// Interactive Electronics Workbench</span></div>
+  <nav id="nav"></nav>
 </header>
-
-<!-- ══════════════════════════════════
-     TRUTH TABLE
-════════════════════════════════════ -->
-<div id="panel-truth" class="panel active">
-  <div class="section-title">Truth Table Generator</div>
-
-  <div class="hint">
-    <b>Operators:</b> AND → <b>.</b> or <b>&</b> or just <b>AB</b> (implicit) &nbsp;|&nbsp; OR → <b>+</b> &nbsp;|&nbsp; NOT → <b>'</b> or <b>~</b> &nbsp;|&nbsp; XOR → <b>^</b><br>
-    <b>Examples:</b> <b>A.B + C'</b> &nbsp;|&nbsp; <b>AB+C'</b> &nbsp;|&nbsp; <b>(A+B).C</b> &nbsp;|&nbsp; <b>a.b+c'</b> (lowercase ok) &nbsp;|&nbsp; <b>A'B'C + ABC'</b>
-  </div>
-
-  <div class="input-row">
-    <input type="text" id="boolExpr" placeholder="Enter Boolean expression e.g. A.B + C'" value="A.B + C'">
-    <button class="btn btn-primary" onclick="generateTruth()">Generate</button>
-    <button class="btn btn-secondary" onclick="explainTruth()">✨ AI Explain</button>
-    <button class="btn btn-secondary" onclick="clearTruth()">Clear</button>
-  </div>
-
-  <div id="truthResult"></div>
-</div>
-
-<!-- ══════════════════════════════════
-     K-MAP
-════════════════════════════════════ -->
-<div id="panel-kmap" class="panel">
-  <div class="section-title">Karnaugh Map</div>
-
-  <div class="input-row">
-    <select id="kmapVars" onchange="initKmap()">
-      <option value="2">2 Variables (A, B)</option>
-      <option value="3" selected>3 Variables (A, B, C)</option>
-      <option value="4">4 Variables (A, B, C, D)</option>
-    </select>
-    <button class="btn btn-primary" onclick="solveKmap()">Solve & Group</button>
-    <button class="btn btn-secondary" onclick="clearKmap()">Clear</button>
-    <button class="btn btn-secondary" onclick="fillFromTruth()">Fill from Truth Table</button>
-  </div>
-
-  <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Click cells to toggle 0 → 1 → X (don't care)</p>
-
-  <div class="kmap-wrap">
-    <div id="kmapGrid"></div>
-  </div>
-
-  <div id="kmapResult"></div>
-</div>
-
-<!-- ══════════════════════════════════
-     GATE SIMULATOR
-════════════════════════════════════ -->
-<div id="panel-gates" class="panel">
-  <div class="section-title">Logic Gate Simulator</div>
-
-  <div class="gate-toolbar">
-    <button class="gate-btn" onclick="addGate('INPUT')">+ INPUT</button>
-    <button class="gate-btn" onclick="addGate('OUTPUT')">+ OUTPUT</button>
-    <button class="gate-btn" onclick="addGate('AND')">AND</button>
-    <button class="gate-btn" onclick="addGate('OR')">OR</button>
-    <button class="gate-btn" onclick="addGate('NOT')">NOT</button>
-    <button class="gate-btn" onclick="addGate('NAND')">NAND</button>
-    <button class="gate-btn" onclick="addGate('NOR')">NOR</button>
-    <button class="gate-btn" onclick="addGate('XOR')">XOR</button>
-    <button class="gate-btn" onclick="addGate('XNOR')">XNOR</button>
-    <button class="gate-btn" style="color:var(--danger);border-color:var(--danger)" onclick="clearGates()">Clear All</button>
-  </div>
-
-  <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
-    Click a gate button to place it → drag gates to move → click output pin (right dot) then input pin (left dot) to connect → click INPUT to toggle 0/1
-  </p>
-
-  <canvas id="gateCanvas"></canvas>
-
-  <div class="gate-legend">
-    <div class="legend-item"><b>AND</b><br><span>Output 1 only when ALL inputs are 1</span></div>
-    <div class="legend-item"><b>OR</b><br><span>Output 1 when ANY input is 1</span></div>
-    <div class="legend-item"><b>NOT</b><br><span>Inverts the input (0→1, 1→0)</span></div>
-    <div class="legend-item"><b>NAND</b><br><span>AND then inverted</span></div>
-    <div class="legend-item"><b>NOR</b><br><span>OR then inverted</span></div>
-    <div class="legend-item"><b>XOR</b><br><span>Output 1 when inputs are DIFFERENT</span></div>
-    <div class="legend-item"><b>XNOR</b><br><span>Output 1 when inputs are SAME</span></div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════
-     BOOLEAN LAWS
-════════════════════════════════════ -->
-<div id="panel-laws" class="panel">
-  <div class="section-title">Boolean Algebra Laws</div>
-  <div class="laws-grid">
-    <div class="law-card">
-      <h4>Identity Laws</h4>
-      <div class="law">A + 0 <span class="eq">= A</span></div>
-      <div class="law">A . 1 <span class="eq">= A</span></div>
-    </div>
-    <div class="law-card">
-      <h4>Null Laws</h4>
-      <div class="law">A + 1 <span class="eq">= 1</span></div>
-      <div class="law">A . 0 <span class="eq">= 0</span></div>
-    </div>
-    <div class="law-card">
-      <h4>Idempotent Laws</h4>
-      <div class="law">A + A <span class="eq">= A</span></div>
-      <div class="law">A . A <span class="eq">= A</span></div>
-    </div>
-    <div class="law-card">
-      <h4>Complement Laws</h4>
-      <div class="law">A + A' <span class="eq">= 1</span></div>
-      <div class="law">A . A' <span class="eq">= 0</span></div>
-    </div>
-    <div class="law-card">
-      <h4>Double Negation</h4>
-      <div class="law">(A')' <span class="eq">= A</span></div>
-    </div>
-    <div class="law-card">
-      <h4>Commutative Laws</h4>
-      <div class="law">A + B <span class="eq">= B + A</span></div>
-      <div class="law">A . B <span class="eq">= B . A</span></div>
-    </div>
-    <div class="law-card">
-      <h4>Associative Laws</h4>
-      <div class="law">(A+B)+C <span class="eq">= A+(B+C)</span></div>
-      <div class="law">(A.B).C <span class="eq">= A.(B.C)</span></div>
-    </div>
-    <div class="law-card">
-      <h4>Distributive Laws</h4>
-      <div class="law">A.(B+C) <span class="eq">= A.B + A.C</span></div>
-      <div class="law">A+(B.C) <span class="eq">= (A+B).(A+C)</span></div>
-    </div>
-    <div class="law-card">
-      <h4>De Morgan's Theorems</h4>
-      <div class="law">(A+B)' <span class="eq">= A'.B'</span></div>
-      <div class="law">(A.B)' <span class="eq">= A'+B'</span></div>
-    </div>
-    <div class="law-card">
-      <h4>Absorption Laws</h4>
-      <div class="law">A + A.B <span class="eq">= A</span></div>
-      <div class="law">A.(A+B) <span class="eq">= A</span></div>
-    </div>
-    <div class="law-card">
-      <h4>Consensus Theorem</h4>
-      <div class="law">A.B + A'.C + B.C <span class="eq">= A.B + A'.C</span></div>
-    </div>
-    <div class="law-card">
-      <h4>XOR Properties</h4>
-      <div class="law">A ⊕ 0 <span class="eq">= A</span></div>
-      <div class="law">A ⊕ A <span class="eq">= 0</span></div>
-      <div class="law">A ⊕ A' <span class="eq">= 1</span></div>
-      <div class="law">A ⊕ 1 <span class="eq">= A'</span></div>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════
-     LEARN
-════════════════════════════════════ -->
-<div id="panel-learn" class="panel">
-  <div class="section-title">Learn Digital Logic</div>
-  <div class="laws-grid">
-    <div class="law-card" style="grid-column:1/-1">
-      <h4>What is Boolean Algebra?</h4>
-      <p style="color:var(--muted);font-size:13px;line-height:1.8">
-        Boolean algebra is math where variables can only be <b style="color:var(--accent)">0 (FALSE)</b> or <b style="color:var(--accent)">1 (TRUE)</b>. 
-        Every digital circuit — your phone, your laptop, everything — is built from these simple 0s and 1s combined using logic gates.
-        A Boolean expression like <b style="color:var(--accent);font-family:var(--mono)">A.B + C'</b> means: (A AND B) OR (NOT C).
-      </p>
-    </div>
-    <div class="law-card">
-      <h4>AND Gate ( . )</h4>
-      <p style="color:var(--muted);font-size:13px;line-height:1.8">
-        Like multiplication. Both inputs must be 1 for output to be 1.<br>
-        <b style="color:var(--accent);font-family:var(--mono)">0.0=0, 0.1=0, 1.0=0, 1.1=1</b><br>
-        Think: "A AND B must both be true"
-      </p>
-    </div>
-    <div class="law-card">
-      <h4>OR Gate ( + )</h4>
-      <p style="color:var(--muted);font-size:13px;line-height:1.8">
-        Like addition (but 1+1=1). Any input being 1 makes output 1.<br>
-        <b style="color:var(--accent);font-family:var(--mono)">0+0=0, 0+1=1, 1+0=1, 1+1=1</b><br>
-        Think: "A OR B at least one must be true"
-      </p>
-    </div>
-    <div class="law-card">
-      <h4>NOT Gate ( ' or ~ )</h4>
-      <p style="color:var(--muted);font-size:13px;line-height:1.8">
-        Flips the bit. 0 becomes 1, 1 becomes 0.<br>
-        <b style="color:var(--accent);font-family:var(--mono)">0'=1, 1'=0</b><br>
-        Think: "opposite of whatever A is"
-      </p>
-    </div>
-    <div class="law-card">
-      <h4>What is a K-Map?</h4>
-      <p style="color:var(--muted);font-size:13px;line-height:1.8">
-        Karnaugh Map is a visual tool to simplify Boolean expressions. 
-        You fill a grid with 1s and 0s from your truth table, then group the 1s in rectangles of 1,2,4,8 — each group eliminates one variable from your expression.
-      </p>
-    </div>
-    <div class="law-card">
-      <h4>SOP vs POS</h4>
-      <p style="color:var(--muted);font-size:13px;line-height:1.8">
-        <b style="color:var(--accent)">SOP</b> (Sum of Products) = OR of AND terms<br>
-        Example: <b style="color:var(--accent);font-family:var(--mono)">A.B + A'.C</b><br><br>
-        <b style="color:var(--accent)">POS</b> (Product of Sums) = AND of OR terms<br>
-        Example: <b style="color:var(--accent);font-family:var(--mono)">(A+B).(A'+C)</b>
-      </p>
-    </div>
-    <div class="law-card">
-      <h4>Minterm & Maxterm</h4>
-      <p style="color:var(--muted);font-size:13px;line-height:1.8">
-        <b style="color:var(--accent)">Minterm (m)</b>: Row in truth table where output = 1<br>
-        <b style="color:var(--accent)">Maxterm (M)</b>: Row in truth table where output = 0<br>
-        You can write any Boolean function as Σm(minterms) or ΠM(maxterms)
-      </p>
-    </div>
-  </div>
+<div id="panels"></div>
 </div>
 
 <script>
-/* ════════════════════════════════════
-   TAB SWITCHING
-════════════════════════════════════ */
+'use strict';
+
+/* ══════════════════════════════════════
+   CORE — Tab engine
+══════════════════════════════════════ */
+const PROXY = 'https://mistral-proxy-2.mraayanshaikh37.workers.dev';
+
+const TABS = [
+  {id:'tt',   label:'Truth Table'},
+  {id:'kmap', label:'K-Map'},
+  {id:'gate', label:'Gate Sim'},
+  {id:'dd',   label:'Digital Design'},
+  {id:'ss',   label:'Signals & Systems'},
+  {id:'nt',   label:'Network Theory'},
+  {id:'laws', label:'Bool Laws'},
+  {id:'learn',label:'Learn'},
+];
+
+const nav = document.getElementById('nav');
+const panels = document.getElementById('panels');
+
+TABS.forEach(t => {
+  const btn = document.createElement('div');
+  btn.className = 'tab'; btn.textContent = t.label;
+  btn.onclick = () => switchTab(t.id);
+  btn.id = 'tab-' + t.id;
+  nav.appendChild(btn);
+
+  const p = document.createElement('div');
+  p.className = 'panel'; p.id = 'panel-' + t.id;
+  panels.appendChild(p);
+});
+
 function switchTab(id) {
-  document.querySelectorAll('.tab').forEach((t,i) => {
-    const ids = ['truth','kmap','gates','laws','learn'];
-    t.classList.toggle('active', ids[i] === id);
-  });
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-' + id).classList.add('active');
-  if (id === 'gates') resizeCanvas();
-  if (id === 'kmap') initKmap();
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  document.getElementById('tab-' + id).classList.add('on');
+  document.getElementById('panel-' + id).classList.add('on');
+  if (id === 'gate') GateSim.onShow();
+  if (id === 'ss') SignalsSystems.onShow();
+  if (id === 'nt') NetworkTheory.onShow();
 }
 
-/* ════════════════════════════════════
-   TRUTH TABLE GENERATOR
-════════════════════════════════════ */
-let lastTruthVars = [];
-let lastTruthValues = [];
+/* ══════════════════════════════════════
+   BOOLEAN PARSER — Recursive Descent
+   Supports: . & (AND), + | (OR), ' ~ ! (NOT), ^ (XOR)
+   Implicit AND: AB = A.B
+   Case insensitive
+══════════════════════════════════════ */
+const BoolParser = (() => {
+  let src, pos;
 
+  const err = msg => { throw new Error(msg); };
 
-function evalBool(expr, varMap) {
-  let e = expr.trim().toUpperCase();
-  // Replace variables longest first
-  // Replace each variable - use character class to avoid partial matches
-  Object.keys(varMap).sort((a,b) => b.length - a.length).forEach(v => {
-    const vUp = v.toUpperCase();
-    // Replace standalone variable letters (not inside words)
-    let result = '';
-    for (let i = 0; i < e.length; i++) {
-      if (e.slice(i,
+  function parse(expr, vars) {
+    src = expr.toUpperCase().replace(/\s/g, '');
+    pos = 0;
+    const tree = parseOR();
+    if (pos < src.length) err('Unexpected character: ' + src[pos]);
+    return tree;
+  }
+
+  function parseOR() {
+    let left = parseXOR();
+    while (pos < src.length && (src[pos] === '+' || src[pos] === '|')) {
+      pos++;
+      left = { op:'OR', l:left, r:parseXOR() };
+    }
+    return left;
+  }
+
+  function parseXOR() {
+    let left = parseAND();
+    while (pos < src.length && src[pos] === '^') {
+      pos++;
+      left = { op:'XOR', l:left, r:parseAND() };
+    }
+    return left;
+  }
+
+  function parseAND() {
+    let left = parseNOT();
+    while (pos < src.length) {
+      // explicit AND: . or &
+      if (src[pos] === '.' || src[pos] === '&') { pos++; left = { op:'AND', l:left, r:parseNOT() }; continue; }
+      // implicit AND: next char is letter or (
+      if (/[A-Z(]/.test(src[pos]) && src[pos] !== ')') { left = { op:'AND', l:left, r:parseNOT() }; continue; }
+      break;
+    }
+    return left;
+  }
+
+  function parseNOT() {
+    if (pos < src.length && (src[pos] === '~' || src[pos] === '!')) {
+      pos++;
+      return { op:'NOT', l:parseNOT() };
+    }
+    return parsePostfix();
+  }
+
+  function parsePostfix() {
+    let node = parsePrimary();
+    while (pos < src.length && src[pos] === "'") {
+      pos++;
+      node = { op:'NOT', l:node };
+    }
+    return node;
+  }
+
+  function parsePrimary() {
+    if (pos >= src.length) err('Unexpected end of expression');
+    if (src[pos] === '(') {
+      pos++;
+      const node = parseOR();
+      if (pos >= src.length || src[pos] !== ')') err('Missing closing )');
+      pos++;
+      return node;
+    }
+    if (/[A-Z]/.test(src[pos])) {
+      const v = src[pos++];
+      return { op:'VAR', name:v };
+    }
+    err('Invalid character: ' + src[pos]);
+  }
+
+  function evaluate(node, env) {
+    switch (node.op) {
+      case 'VAR': return env[node.name] ?? 0;
+      case 'NOT': return evaluate(node.l, env) ^ 1;
+      case 'AND': return evaluate(node.l, env) & evaluate(node.r, env);
+      case 'OR':  return evaluate(node.l, env) | evaluate(node.r, env);
+      case 'XOR': return evaluate(node.l, env) ^ evaluate(node.r, env);
+    }
+  }
+
+  function getVars(node, set = new Set()) {
+    if (!node) return set;
+    if (node.op === 'VAR') set.add(node.name);
+    if (node.l) getVars(node.l, set);
+    if (node.r) getVars(node.r, set);
+    return set;
+  }
+
+  return { parse, evaluate, getVars };
+})();
+
+/* ══════════════════════════════════════
+   AI HELPER
+══════════════════════════════════════ */
+async function askAI(prompt, targetEl) {
+  targetEl.innerHTML = '<span style="color:var(--purple)">✨ AI thinking...</span>';
+  try {
+    const r = await fetch(PROXY, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ model:'mistral-large-latest',
+        messages:[{role:'user', content:prompt}] })
+    });
+    const d = await r.json();
+    const txt = d.choices?.[0]?.message?.content || 'No response.';
+    targetEl.innerHTML = '<b style="color:var(--purple)">✨ AI Explanation</b><br><br>' +
+      txt.split('\n').map(l => l || '<br>').join('<br>');
+  } catch {
+    targetEl.innerHTML = '<span style="color:var(--red)">Could not connect. Check internet.</span>';
+  }
+}
+
+/* ══════════════════════════════════════
+   TRUTH TABLE
+══════════════════════════════════════ */
+const TruthTable = (() => {
+  let lastTree = null, lastVars = [], lastVals = [];
+
+  function init() {
+    const p = document.getElementById('panel-tt');
+    p.innerHTML = `
+      <div class="sec">Truth Table Generator</div>
+      <div class="hint">
+        <b>AND:</b> A.B &nbsp;or&nbsp; AB (implicit) &nbsp;or&nbsp; A&B<br>
+        <b>OR:</b> A+B &nbsp;|&nbsp; <b>NOT:</b> A' &nbsp;or&nbsp; ~A<br>
+        <b>XOR:</b> A^B &nbsp;|&nbsp; <b>Grouping:</b> (A+B).C<br>
+        <b>Examples:</b> A.B+C' &nbsp;|&nbsp; AB+BC'+AC &nbsp;|&nbsp; (A^B).C'+ABC
+      </div>
+      <div class="row">
+        <div class="col">
+          <label>Boolean Expression</label>
+          <input type="text" id="tt-expr" value="A.B + C'" placeholder="e.g. AB+C'">
+        </div>
+        <button class="btn btn-g" onclick="TruthTable.gen()">Generate</button>
+        <button class="btn btn-p" onclick="TruthTable.explain()">✨ AI Explain</button>
+        <button class="btn btn-s" onclick="TruthTable.clear()">Clear</button>
+      </div>
+      <div id="tt-out"></div>
+      <div id="tt-ai" class="card" style="margin-top:14px;display:none;font-size:12px;line-height:1.9"></div>
+    `;
+    document.getElementById('tt-expr').addEventListener('keydown', e => { if (e.key==='Enter') TruthTable.gen(); });
+    TruthTable.gen();
+  }
+
+  function gen() {
+    const expr = document.getElementById('tt-expr').value.trim();
+    const out = document.getElementById('tt-out');
+    if (!expr) { out.innerHTML = ''; return; }
+
+    try {
+      const tree = BoolParser.parse(expr, {});
+      const vars = [...BoolParser.getVars(tree)].sort();
+      if (vars.length === 0) { out.innerHTML = '<div class="err">No variables found</div>'; return; }
+      if (vars.length > 6) { out.innerHTML = '<div class="err">Max 6 variables</div>'; return; }
+
+      lastTree = tree; lastVars = vars; lastVals = [];
+      const rows = 1 << vars.length;
+      const minterms = [], maxterms = [];
+
+      let html = '<div class="tbl-wrap"><table><thead><tr>';
+      vars.forEach(v => html += `<th>${v}</th>`);
+      html += `<th style="color:var(--warn)">${expr}</th></tr></thead><tbody>`;
+
+      for (let i = 0; i < rows; i++) {
+        const env = {};
+        html += '<tr>';
+        vars.forEach((v, vi) => {
+          const bit = (i >> (vars.length - 1 - vi)) & 1;
+          env[v] = bit;
+          html += `<td class="${bit?'v1':'v0'}">${bit}</td>`;
+        });
+        const out1 = BoolParser.evaluate(tree, env);
+        lastVals.push(out1);
+        if (out1) minterms.push(i); else maxterms.push(i);
+        html += `<td class="${out1?'v1':'v0'}" style="font-size:15px">${out1}</td></tr>`;
+      }
+      html += '</tbody></table></div>';
+
+      out.innerHTML = `
+        <div class="row" style="margin-bottom:12px">
+          <div class="card" style="flex:1">
+            <div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Minterms (output=1)</div>
+            <div style="font-family:var(--mono);color:var(--accent);margin-top:4px;font-size:13px">
+              ${minterms.length ? 'Σm(' + minterms.join(', ') + ')' : 'None — always 0'}
+            </div>
+          </div>
+          <div class="card" style="flex:1">
+            <div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Maxterms (output=0)</div>
+            <div style="font-family:var(--mono);color:var(--muted);margin-top:4px;font-size:13px">
+              ${maxterms.length ? 'ΠM(' + maxterms.join(', ') + ')' : 'None — always 1'}
+            </div>
+          </div>
+        </div>
+        ${html}
+      `;
+    } catch(e) {
+      out.innerHTML = `<div class="err">Error: ${e.message}</div>`;
+    }
+  }
+
+  async function explain() {
+    const expr = document.getElementById('tt-expr').value.trim();
+    if (!expr || !lastVars.length) { gen(); if (!lastVars.length) return; }
+    const aiEl = document.getElementById('tt-ai');
+    aiEl.style.display = 'block';
+    const minterms = lastVals.map((v,i) => v?i:-1).filter(i=>i>=0);
+    await askAI(
+      `Explain this Boolean expression for an engineering student learning digital logic:\n\nExpression: ${expr}\nVariables: ${lastVars.join(', ')}\nMinterms: ${minterms.join(', ')}\n\nExplain in simple terms:\n1. What this expression means in plain English\n2. What each operator does\n3. Why certain inputs give output 1\n4. A real-world analogy\nBe friendly, clear, use emojis.`,
+      aiEl
+    );
+  }
+
+  function clear() {
+    document.getElementById('tt-expr').value = '';
+    document.getElementById('tt-out').innerHTML = '';
+    document.getElementById('tt-ai').style.display = 'none';
+    lastTree = null; lastVars = []; lastVals = [];
+  }
+
+  function getLastData() { return { vars: lastVars, vals: lastVals }; }
+
+  return { init, gen, explain, clear, getLastData };
+})();
+
+/* ══════════════════════════════════════
+   K-MAP
+══════════════════════════════════════ */
+const KMap = (() => {
+  let n = 3, vals = {};
+
+  const LAYOUTS = {
+    2: { cols:['B=0','B=1'], rows:['A=0','A=1'], cells:[[0,1],[2,3]] },
+    3: { cols:['BC=00','BC=01','BC=11','BC=10'], rows:['A=0','A=1'], cells:[[0,1,3,2],[4,5,7,6]] },
+    4: { cols:['CD=00','CD=01','CD=11','CD=10'], rows:['AB=00','AB=01','AB=11','AB=10'],
+         cells:[[0,1,3,2],[4,5,7,6],[12,13,15,14],[8,9,11,10]] }
+  };
+
+  function init() {
+    const p = document.getElementById('panel-kmap');
+    p.innerHTML = `
+      <div class="sec">Karnaugh Map Simplifier</div>
+      <div class="row">
+        <div class="col">
+          <label>Variables</label>
+          <select id="km-n" onchange="KMap.reset()">
+            <option value="2">2 Variables (A,B)</option>
+            <option value="3" selected>3 Variables (A,B,C)</option>
+            <option value="4">4 Variables (A,B,C,D)</option>
+          </select>
+        </div>
+        <button class="btn btn-g" onclick="KMap.solve()">Solve & Simplify</button>
+        <button class="btn btn-p" onclick="KMap.fillFromTT()">← From Truth Table</button>
+        <button class="btn btn-s" onclick="KMap.reset()">Clear</button>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:14px">Tap cells → toggle 0 / 1 / X (don't care)</p>
+      <div id="km-grid" style="overflow-x:auto;margin-bottom:16px"></div>
+      <div id="km-out"></div>
+    `;
+    render();
+  }
+
+  function render() {
+    n = parseInt(document.getElementById('km-n').value);
+    const L = LAYOUTS[n];
+    let html = '<div class="km-grid">';
+    // header
+    html += '<div class="km-row">';
+    html += `<div class="km-cell hdr">${n===4?'AB\\CD':'A\\BC'}</div>`;
+    L.cols.forEach(c => html += `<div class="km-cell hdr">${c}</div>`);
+    html += '</div>';
+    // rows
+    L.cells.forEach((row, ri) => {
+      html += '<div class="km-row">';
+      html += `<div class="km-cell hdr">${L.rows[ri]}</div>`;
+      row.forEach(m => {
+        const v = vals[m] ?? 0;
+        const cls = v===1?'c1':v==='x'?'cx':'c0';
+        html += `<div class="km-cell ${cls}" onclick="KMap.toggle(${m})">${v==='x'?'X':v}<div class="km-mt">m${m}</div></div>`;
+      });
+      html += '</div>';
+    });
+    html += '</div>';
+    document.getElementById('km-grid').innerHTML = html;
+  }
+
+  function toggle(m) {
+    const cur = vals[m] ?? 0;
+    vals[m] = cur===0?1:cur===1?'x':0;
+    render();
+  }
+
+  function reset() { vals = {}; render(); document.getElementById('km-out').innerHTML = ''; }
+
+  function fillFromTT() {
+    const { vars, vals:v } = TruthTable.getLastData();
+    if (!v.length) { document.getElementById('km-out').innerH
