@@ -1,29 +1,30 @@
-# ⚡🧠 LogicLab – Digital Logic Gate Simulator
+# ⚡ LogicLab
 
-> Learn digital logic by building and testing virtual logic circuits.
+> An interactive browser-based digital logic simulator that helps students learn Boolean logic by building and testing virtual circuits in real time.
 
-LogicLab is a browser-based digital logic gate simulator designed to help students understand the fundamentals of digital electronics through interactive experimentation.
+LogicLab is a web-based digital logic gate simulator developed to make learning Digital Electronics more interactive. Instead of memorizing truth tables, users can experiment with logic gates by changing input values and instantly observing the output.
 
-Instead of memorizing truth tables, users can build and test virtual logic circuits while instantly observing the output.
-
-This project was developed as part of my learning journey in Electronics & Telecommunication Engineering and demonstrates how software can be used to simplify complex hardware concepts.
+Built entirely using HTML, CSS, and JavaScript, LogicLab demonstrates how software can simplify the understanding of fundamental hardware concepts.
 
 ---
 
 # 📖 About
 
-Digital logic is the foundation of modern electronic systems, computers, and embedded devices.
+Digital logic forms the foundation of computers, embedded systems, processors, and modern electronic devices.
 
-LogicLab provides a simple environment where users can experiment with different logic gates without requiring physical hardware.
-
-The objective was to make learning Boolean logic interactive, visual, and beginner-friendly using only web technologies.
+LogicLab provides a simple virtual environment where students can explore the behavior of basic logic gates without requiring physical components or laboratory equipment. The project focuses on visual learning through real-time interaction, making Boolean logic easier to understand.
 
 ---
 
-# 🎯 Features
+# ✨ Features
 
 - Interactive logic gate simulation
 - Real-time output calculation
+- Beginner-friendly interface
+- Browser-based application (No installation required)
+
+### Supported Logic Gates
+
 - AND Gate
 - OR Gate
 - NOT Gate
@@ -31,8 +32,6 @@ The objective was to make learning Boolean logic interactive, visual, and beginn
 - NOR Gate
 - XOR Gate
 - XNOR Gate
-- Beginner-friendly interface
-- Browser-based (No installation required)
 
 ---
 
@@ -40,17 +39,17 @@ The objective was to make learning Boolean logic interactive, visual, and beginn
 
 | Technology | Purpose |
 |------------|---------|
-| HTML | User Interface |
-| CSS | Styling |
-| JavaScript | Logic Simulation |
+| HTML5 | Application Structure |
+| CSS3 | Styling and Layout |
+| JavaScript (ES6) | Logic Simulation and Interactivity |
 
 ---
 
-# ⚙ Working Principle
+# ⚙️ Working Principle
 
 1. Select a logic gate.
 2. Toggle the input switches.
-3. JavaScript evaluates the selected gate.
+3. JavaScript evaluates the selected Boolean expression.
 4. The output updates instantly.
 5. Experiment with different input combinations to understand gate behavior.
 
@@ -58,20 +57,21 @@ The objective was to make learning Boolean logic interactive, visual, and beginn
 
 # 🧠 Engineering Concepts Demonstrated
 
-This project demonstrates practical concepts including:
+LogicLab applies several core concepts from Digital Electronics, including:
 
-- Digital Electronics
+- Digital Logic Gates
 - Boolean Algebra
-- Logic Gates
 - Truth Tables
 - Combinational Logic
+- Binary Logic
 - JavaScript Programming
 - DOM Manipulation
-- Interactive UI Design
+- Event Handling
+- Interactive User Interface Design
 
 ---
 
-# 💻 Project Structure
+# 📂 Project Structure
 
 ```
 LogicLab/
@@ -84,18 +84,13 @@ LogicLab/
 
 ---
 
-# 📷 Project Gallery
+# 🎯 Learning Outcomes
 
-Project screenshots and demonstrations will be added in future updates as LogicLab continues to evolve.
-
----
-
-# 📚 What I Learned
-
-Developing LogicLab helped strengthen practical understanding of:
+Developing LogicLab strengthened practical understanding of:
 
 - Digital Logic Design
-- JavaScript Programming
+- Boolean Expressions
+- JavaScript Fundamentals
 - DOM Manipulation
 - Event Handling
 - UI Design
@@ -106,29 +101,41 @@ Developing LogicLab helped strengthen practical understanding of:
 
 # 🚀 Future Improvements
 
-- Half Adder Simulation
-- Full Adder Simulation
+### Combinational Circuits
+
+- Half Adder
+- Full Adder
 - Multiplexer
 - Demultiplexer
-- Decoder
 - Encoder
+- Decoder
+
+### Sequential Circuits
+
 - SR Flip-Flop
 - JK Flip-Flop
 - D Flip-Flop
 - T Flip-Flop
+- Registers
+- Counters
+
+### Additional Features
+
 - Timing Diagram Visualization
-- Sequential Logic Circuits
+- Circuit Builder
 - Save Circuit Designs
-- Mobile-Friendly Interface
+- Mobile Responsive Design
 - Dark Mode
+- Keyboard Accessibility
+- More Input Lines
 
 ---
 
-# 🔄 Project Evolution
+# 💡 Why LogicLab?
 
-LogicLab began as a simple digital logic gate simulator to reinforce concepts learned during Digital Electronics coursework.
+Traditional learning of Digital Electronics often relies on memorizing truth tables.
 
-Future versions aim to evolve into a complete browser-based Digital Logic Laboratory capable of simulating both combinational and sequential circuits.
+LogicLab encourages hands-on experimentation by allowing users to instantly visualize how logic gates respond to different inputs. This interactive approach improves conceptual understanding and makes learning more engaging.
 
 ---
 
@@ -144,11 +151,17 @@ This project directly supports concepts taught in:
 
 ---
 
-# 🎯 Project Status
+# 📌 Project Status
 
 🟢 Functional Prototype Completed
 
-Future updates will focus on expanding LogicLab into a more comprehensive digital circuit simulator.
+Current Version:
+- Basic Logic Gate Simulator
+
+Planned Versions:
+- Complete Combinational Logic Simulator
+- Sequential Circuit Simulator
+- Full Browser-Based Digital Logic Laboratory
 
 ---
 
@@ -158,12 +171,12 @@ Future updates will focus on expanding LogicLab into a more comprehensive digita
 
 Electronics & Telecommunication Engineering Student
 
-Building embedded systems, AI applications, and educational engineering software through continuous learning and experimentation.
+Interested in Embedded Systems, Digital Electronics, IoT, AI Applications, and Educational Software Development.
 
 ---
 
 # 📄 License
 
-This project is shared for educational and learning purposes.
+This project is released for educational purposes.
 
-Feel free to explore, learn from, and build upon the ideas presented here.
+Feel free to learn from, modify, and build upon the project while providing appropriate credit.
