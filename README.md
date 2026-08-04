@@ -368,7 +368,8 @@ Planned Versions:
 - Full Browser-Based Digital Logic Laboratory
 
 ---
-
+## 🔗 Live Demo
+👉 [Click here to try it live]https://mraayanshaikh37.github.io/logiclab/
 # 👨‍💻 Author
 
 **Aayan Shaikh**
